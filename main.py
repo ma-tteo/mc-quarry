@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-"""
+r"""
 MC Quarry - Modrinth & CurseForge Modpack Downloader
+
+    __  _________     ____                             
+   /  |/  / ____/    / __ \__  ______ _____________  __
+  / /|_/ / /  ______/ / / / / / / __ `/ ___/ ___/ / / /
+ / /  / / /__/_____/ /_/ / /_/ / /_/ / /  / /  / /_/ / 
+/_/  /_/\____/     \___\_\__,_/\__,_/_/  /_/   \__, /  
+                                              /____/   
+
 Copyright (C) 2026 Matto244
 
 This program is free software: you can redistribute it and/or modify
@@ -109,13 +117,14 @@ def process_mod_category(
     config: Dict[str, Any],
     mc_version: str,
     args_yes: bool,
-    threads: int
+    threads: int,
+    global_stats: DownloadStats
 ) -> None:
     """Process a single mod category (download mods)."""
     mod_list = config.get(config_key, [])
     if not mod_list:
         return
-    
+
     print_section_header(title)
     out_dir.mkdir(parents=True, exist_ok=True)
     installed = read_all_mod_info(out_dir)
@@ -126,16 +135,14 @@ def process_mod_category(
         print(f"   {BColors.DIM}Reason: {reason}{BColors.ENDC}")
         logger.info(f"Skipped: {mod_name} - {reason}")
 
-    stats = DownloadStats()
+    # Use global stats instead of local one
     with ThreadPoolExecutor(max_workers=threads) as executor:
         if project_type == "mod_cf":
-            futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, stats) for m in active_list]
+            futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, global_stats) for m in active_list]
         else:
-            futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, stats) for m in active_list]
+            futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, global_stats) for m in active_list]
         for _ in as_completed(futures):
             pass
-
-    print_download_summary(stats)
 
 
 def process_texture_packs(
@@ -144,17 +151,18 @@ def process_texture_packs(
     mc_version: str,
     args_yes: bool,
     threads: int,
-    base_dir: Path
+    base_dir: Path,
+    global_stats: DownloadStats
 ) -> Optional[Path]:
     """Process texture packs download and return destination path if copied."""
     tp_list = config.get("texture_packs", [])
     if not tp_list:
         return None
-    
+
     do_tp = args_yes
     if not do_tp:
         do_tp = input(f"\n{BColors.BOLD}{get_string('download_texture_packs_prompt')}{BColors.ENDC}").lower().startswith(('y', 's'))
-    
+
     if not do_tp:
         return None
 
@@ -162,13 +170,11 @@ def process_texture_packs(
     tp_dir.mkdir(parents=True, exist_ok=True)
     print_section_header("🎨 TEXTURE PACKS")
 
-    tp_stats = DownloadStats()
+    # Use global stats instead of local one
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, tp_stats) for tp in tp_list]
+        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, global_stats) for tp in tp_list]
         for _ in as_completed(futures):
             pass
-
-    print_download_summary(tp_stats)
 
     if args_yes or input(f"\n{BColors.BOLD}{get_string('copy_texture_packs_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
         dest_tps = get_destination_path("resourcepacks_folder", False, args_yes, config)
@@ -404,6 +410,9 @@ def main():
 
     config = load_config()
     lang = select_language(args.lang, config)
+    
+    # Show banner before asking for version
+    print_banner()
     mc_version = get_mc_version(args.version)
 
     logger.info(f"--- START SESSION (MC {mc_version}) ---")
@@ -419,6 +428,9 @@ def main():
         logger.info(f"CurseForge API key loaded: {cf_api_key[:4]}...{cf_api_key[-4:] if len(cf_api_key) >= 8 else '***'}")
     client = APIClient(cf_api_key=cf_api_key)
     base_dir = Path.cwd() / "modpack"
+    
+    # Global stats accumulator - passed to all download functions
+    all_stats = DownloadStats()
 
     # Process mod categories
     for config_key, project_type, subdir, title, flag in MOD_CATEGORIES:
@@ -432,13 +444,16 @@ def main():
             continue
 
         out_dir = base_dir / f"{subdir}_{mc_version}"
-        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads)
+        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads, all_stats)
 
     # Process texture packs
-    process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir)
+    process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir, all_stats)
 
     # Copy mods to destination
     copy_mods_to_destination(config, args.yes, base_dir, mc_version)
+
+    # Print final summary only once at the end
+    print_download_summary(all_stats)
 
     print(f"\n{BColors.HEADER}{get_string('script_finished')}{BColors.ENDC}")
 
