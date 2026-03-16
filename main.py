@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import os
 import time
 import shutil
 import argparse
@@ -12,7 +13,7 @@ from typing import Dict, Any, List, Optional
 from mc_quarry.utils import BColors, DownloadStats, BOX_WIDTH
 from mc_quarry.config_manager import load_config, save_config
 from mc_quarry.ui_manager import (
-    get_string, print_banner, print_section_header, 
+    get_string, print_banner, print_section_header,
     detect_language, set_selected_language, detect_hardware
 )
 from mc_quarry.api_client import APIClient
@@ -225,7 +226,11 @@ def main():
     logger.info(hw_msg)
     print(f"{BColors.OKBLUE}═════════════════════════════════════════════════════════════{BColors.ENDC}")
 
-    client = APIClient(cf_api_key=config.get("curseforge_api_key", ""))
+    # Load CurseForge API key from environment variable (preferred) or config
+    cf_api_key = os.getenv("CURSEFORGE_API_KEY", config.get("curseforge_api_key", ""))
+    if cf_api_key:
+        logger.info(f"CurseForge API key loaded: {cf_api_key[:4]}...{cf_api_key[-4:] if len(cf_api_key) >= 8 else '***'}")
+    client = APIClient(cf_api_key=cf_api_key)
     stats = DownloadStats()
     base_dir = Path.cwd() / "modpack"
     

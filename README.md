@@ -61,6 +61,7 @@ python3 main.py --version 1.21.1 --yes
 ```json
 {
     "language": "en",
+    "curseforge_api_key": "your-api-key-here",
     "mods_folder": "/path/to/your/instance/mods",
     "resourcepacks_folder": "/path/to/your/instance/resourcepacks",
     "mods": [
@@ -85,6 +86,13 @@ python3 main.py --version 1.21.1 --yes
 | `texture_packs` | List of resource packs |
 | `mods_folder` | Destination path for mods (supports `<INSTANCE_NAME>`) |
 | `resourcepacks_folder` | Destination path for texture packs |
+| `curseforge_api_key` | **Optional**: CurseForge API key (or use `CURSEFORGE_API_KEY` env var) |
+
+### 🔐 Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CURSEFORGE_API_KEY` | Override CurseForge API key from config (recommended for security) |
 
 ---
 
