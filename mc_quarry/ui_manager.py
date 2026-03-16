@@ -349,3 +349,52 @@ def detect_hardware() -> Dict[str, Any]:
         except:
             pass
     return hardware
+
+
+def print_download_summary(stats: Any) -> None:
+    """Print download summary with ASCII art header."""
+    from typing import Tuple  # Avoid circular import at module level
+    
+    inner_width = BOX_WIDTH - 2
+    indent_val = 2
+
+    def print_row(content, row_color=BColors.OKBLUE, indent=indent_val):
+        v_len = get_visual_length(content)
+        padding = inner_width - v_len - indent
+        print(f"{row_color}║{BColors.ENDC}{' ' * indent}{content}{' ' * max(0, padding)}{row_color}║{BColors.ENDC}")
+
+    print(f"\n{BColors.OKBLUE}╔{'═' * inner_width}╗{BColors.ENDC}")
+    # ASCII ART Header
+    content_header = [
+        fr"{BColors.HEADER}{BColors.BOLD} ___ ___ ___ ___ ___ ___  _  _   ___ _   _ __  __ __  __   _   _____   __ {BColors.ENDC}",
+        fr"{BColors.HEADER}{BColors.BOLD}/ __| __/ __/ __|_ _/ _ \| \| | / __| | | |  \/  |  \/  | /_\ | _ \ \ / / {BColors.ENDC}",
+        fr"{BColors.HEADER}{BColors.BOLD}\__ \ _|\__ \__ \| | (_) | .` | \__ \ |_| | |\/| | |\/| |/ _ \|   /\ V /  {BColors.ENDC}",
+        fr"{BColors.HEADER}{BColors.BOLD}|___/___|___/___/___\___/|_|\_| |___/\___/|_|  |_|_|  |_/_/ \_\_|_ \ |_|   {BColors.ENDC}"
+    ]
+    for line in content_header:
+        print_row(line, indent=indent_val)
+
+    print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
+
+    print_row(f"{BColors.OKGREEN}✅ Installed: {BColors.BOLD}{stats.installed}{BColors.ENDC}")
+    print_row(f"{BColors.OKCYAN}🔄 Updated:   {BColors.BOLD}{stats.updated}{BColors.ENDC}")
+    print_row(f"{BColors.OKBLUE}💤 Up to date:{BColors.BOLD}{stats.skipped_up_to_date}{BColors.ENDC}")
+    print_row(f"{BColors.WARNING}⚠️  Incompat.: {BColors.BOLD}{stats.skipped_incompatible}{BColors.ENDC}")
+
+    if stats.not_found or stats.failed:
+        print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
+        max_label_len = inner_width - indent_val - 4
+        for name in stats.not_found:
+            safe_name = name[:max_label_len-12] + "..." if len(name) > max_label_len-12 else name
+            print_row(f"{BColors.FAIL}❌ NOT FOUND: {BColors.ENDC}{BColors.BOLD}{safe_name}{BColors.ENDC}")
+        for name, reason in stats.failed:
+            detail = f" ({reason})" if reason else ""
+            available = inner_width - indent_val - 15
+            full_text = f"{name}{detail}"
+            if len(full_text) > available:
+                safe_text = full_text[:available-3] + "..."
+            else:
+                safe_text = full_text
+            print_row(f"{BColors.FAIL}❌ FAILED:    {BColors.ENDC}{BColors.BOLD}{safe_text}{BColors.ENDC}")
+
+    print(f"{BColors.OKBLUE}╚{'═' * inner_width}╝{BColors.ENDC}\n")

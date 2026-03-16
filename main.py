@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 from mc_quarry.utils import BColors, DownloadStats, BOX_WIDTH
 from mc_quarry.config_manager import load_config, save_config
 from mc_quarry.ui_manager import (
-    get_string, print_banner, print_section_header,
+    get_string, print_banner, print_section_header, print_download_summary,
     detect_language, set_selected_language, detect_hardware
 )
 from mc_quarry.api_client import APIClient
@@ -119,7 +119,7 @@ def process_mod_category(
         for _ in as_completed(futures):
             pass
 
-    stats.print_summary()
+    print_download_summary(stats)
 
 
 def process_texture_packs(
@@ -152,7 +152,7 @@ def process_texture_packs(
         for _ in as_completed(futures):
             pass
 
-    tp_stats.print_summary()
+    print_download_summary(tp_stats)
 
     if args_yes or input(f"\n{BColors.BOLD}{get_string('copy_texture_packs_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
         dest_tps = get_destination_path("resourcepacks_folder", False, args_yes, config)
