@@ -1,5 +1,4 @@
 import os
-import re
 import time
 import json
 import logging
@@ -7,6 +6,7 @@ import shutil
 import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable, Set, Tuple
+from packaging import version as pkg_version
 from .utils import BColors, sanitize_filename, DownloadStats
 from .ui_manager import get_string, detect_hardware
 
@@ -66,26 +66,16 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
 
 def compare_versions(v1: str, v2: str) -> int:
     """Ritorna 1 se v1 > v2, -1 se v1 < v2, 0 se uguali."""
-    def normalize(v):
-        # Extract digits, but handle possible non-numeric parts gracefully
-        return [int(x) for x in re.findall(r'\d+', v)]
-    
-    parts1 = normalize(v1)
-    parts2 = normalize(v2)
-    
-    # If no numbers found, fall back to simple string comparison
-    if not parts1 or not parts2:
+    try:
+        ver1, ver2 = pkg_version.parse(v1), pkg_version.parse(v2)
+        if ver1 > ver2: return 1
+        if ver1 < ver2: return -1
+        return 0
+    except Exception:
+        # Fallback to string comparison if parsing fails
         if v1 > v2: return 1
         if v1 < v2: return -1
         return 0
-
-    length = max(len(parts1), len(parts2))
-    parts1.extend([0] * (length - len(parts1)))
-    parts2.extend([0] * (length - len(parts2)))
-    
-    if parts1 > parts2: return 1
-    if parts1 < parts2: return -1
-    return 0
 
 def check_incompatibility(mod_name: str, mc_version: str, config: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     incompatible_rules = config.get("incompatible_mods", {})
