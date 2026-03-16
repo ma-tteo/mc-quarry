@@ -1,0 +1,32 @@
+config.json
+mc-quarry.log
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+env/
+venv/
+.env
+.pytest_cache/
+
+# Build/Dist
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.DS_Store
+.vscode/
+.idea/
+
+# Temp & Debug
+/tmp/
+debug_*.py
+test_table_*.py
+
+# Modpack data
+modpack/mods_*/
+modpack/texture_packs_*/
+modpack/resourcepacks_*/
