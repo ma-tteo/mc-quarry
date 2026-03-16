@@ -34,6 +34,178 @@ logger = logging.getLogger("mc-quarry")
 
 print_lock = threading.Lock()
 
+# Category definition: (config_key, project_type, output_subdir, title, config_flag)
+MOD_CATEGORIES = [
+    ("mods", "mod", "mods_core", "💎 CORE MODS", None),
+    ("curseforge_mods", "mod_cf", "mods_core", "🔥 CURSEFORGE MODS", None),
+    ("light_qol_mods", "mod", "mods_light_qol", "💡 LIGHT QOL", "install_light_qol"),
+    ("medium_qol_mods", "mod", "mods_medium_qol", "🎭 MEDIUM QOL", "install_medium_qol"),
+    ("survival_qol_mods", "mod", "mods_survival", "⚔️ SURVIVAL QOL", "install_survival_qol")
+]
+
+
+def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
+    """Select language from args, config, or user input."""
+    lang = args_lang or config.get("language") or detect_language()
+    if not (args_lang or config.get("language")):
+        print("1. English\n2. Italiano")
+        choice = input("Select Language: ").strip()
+        lang = 'it' if choice == '2' else 'en'
+        config["language"] = lang
+        save_config(config)
+    set_selected_language(lang)
+    return lang
+
+
+def get_mc_version(args_version: Optional[str]) -> str:
+    """Get Minecraft version from args or user input."""
+    version = args_version or input(f" {BColors.BOLD}{get_string('enter_mc_version')}{BColors.ENDC}").strip()
+    if not version:
+        print(get_string('invalid_version'))
+        sys.exit(1)
+    return version
+
+
+def should_process_category(flag: Optional[str], config: Dict[str, Any], args_yes: bool) -> bool:
+    """Determine if a mod category should be processed based on config and user input."""
+    if not flag:
+        return True
+    
+    enabled_in_config = config.get(flag, False) if flag != "install_light_qol" else config.get(flag, True)
+    
+    if flag == "install_light_qol":
+        return enabled_in_config
+    
+    # For Medium and Survival QoL: use config in batch mode, ask in interactive
+    if args_yes:
+        return enabled_in_config
+    
+    prompt_key = 'install_medium_qol_prompt' if flag == "install_medium_qol" else 'install_survival_qol_prompt'
+    return input(f"\n{BColors.BOLD}{get_string(prompt_key)}{BColors.ENDC}").lower().startswith(('y', 's'))
+
+
+def process_mod_category(
+    client: APIClient,
+    config_key: str,
+    project_type: str,
+    out_dir: Path,
+    title: str,
+    config: Dict[str, Any],
+    mc_version: str,
+    args_yes: bool,
+    threads: int
+) -> None:
+    """Process a single mod category (download mods)."""
+    mod_list = config.get(config_key, [])
+    if not mod_list:
+        return
+    
+    print_section_header(title)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    installed = read_all_mod_info(out_dir)
+    active_list, skipped = filter_mods(mod_list, mc_version, config)
+
+    for mod_name, reason in skipped:
+        print(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{mod_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Skipped{BColors.ENDC}")
+        print(f"   {BColors.DIM}Reason: {reason}{BColors.ENDC}")
+        logger.info(f"Skipped: {mod_name} - {reason}")
+
+    stats = DownloadStats()
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        if project_type == "mod_cf":
+            futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, stats) for m in active_list]
+        else:
+            futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, stats) for m in active_list]
+        for _ in as_completed(futures):
+            pass
+
+    stats.print_summary()
+
+
+def process_texture_packs(
+    client: APIClient,
+    config: Dict[str, Any],
+    mc_version: str,
+    args_yes: bool,
+    threads: int,
+    base_dir: Path
+) -> Optional[Path]:
+    """Process texture packs download and return destination path if copied."""
+    tp_list = config.get("texture_packs", [])
+    if not tp_list:
+        return None
+    
+    do_tp = args_yes
+    if not do_tp:
+        do_tp = input(f"\n{BColors.BOLD}{get_string('download_texture_packs_prompt')}{BColors.ENDC}").lower().startswith(('y', 's'))
+    
+    if not do_tp:
+        return None
+
+    tp_dir = base_dir / f"texture_packs_{mc_version}"
+    tp_dir.mkdir(parents=True, exist_ok=True)
+    print_section_header("🎨 TEXTURE PACKS")
+
+    tp_stats = DownloadStats()
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, tp_stats) for tp in tp_list]
+        for _ in as_completed(futures):
+            pass
+
+    tp_stats.print_summary()
+
+    if args_yes or input(f"\n{BColors.BOLD}{get_string('copy_texture_packs_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
+        dest_tps = get_destination_path("resourcepacks_folder", False, args_yes, config)
+        if dest_tps:
+            config["resourcepacks_folder"] = str(dest_tps)
+            save_config(config)
+            dest_tps.mkdir(parents=True, exist_ok=True)
+            print(f"{BColors.OKBLUE}{get_string('copying_files_to', None, dest_tps)}{BColors.ENDC}")
+            for f in tp_dir.glob("*.zip"):
+                shutil.copy(f, dest_tps)
+                print(f"  {BColors.OKGREEN}{get_string('copied_file', None, f.name)}{BColors.ENDC}")
+            return dest_tps
+    return None
+
+
+def copy_mods_to_destination(config: Dict[str, Any], args_yes: bool, base_dir: Path, mc_version: str) -> None:
+    """Copy all downloaded mods to the destination folder."""
+    if not (args_yes or input(f"\n{BColors.BOLD}{get_string('copy_mods_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's'))):
+        return
+    
+    dest = get_destination_path("mods_folder", True, args_yes, config)
+    if not dest:
+        return
+    
+    config["mods_folder"] = str(dest)
+    save_config(config)
+    dest.mkdir(parents=True, exist_ok=True)
+    
+    if args_yes or input(f"{BColors.WARNING}{get_string('delete_existing_files_prompt')}{BColors.ENDC}").lower().startswith(('y', 's')):
+        for f in dest.glob("*.jar"):
+            f.unlink()
+
+    # Collect all jars from enabled categories
+    all_jars = []
+    for cfg_key, _, subdir, _, flag in MOD_CATEGORIES:
+        if not config.get(cfg_key):
+            continue
+        should_have_processed = True
+        if flag:
+            should_have_processed = config.get(flag, False) if flag != "install_light_qol" else config.get(flag, True)
+        if should_have_processed:
+            out_dir = base_dir / f"{subdir}_{mc_version}"
+            if out_dir.exists():
+                all_jars.extend(out_dir.glob("*.jar"))
+
+    if all_jars:
+        print(f"{BColors.OKBLUE}{get_string('copying_files_to', None, dest)}{BColors.ENDC}")
+        for f in all_jars:
+            shutil.copy(f, dest)
+            print(f"  {BColors.OKGREEN}{get_string('copied_file', None, f.name)}{BColors.ENDC}")
+    else:
+        print(f"{BColors.WARNING}No mods found to copy.{BColors.ENDC}")
+
 def process_modrinth_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
     clean_name = name.strip()
     logs = []
@@ -202,22 +374,8 @@ def main():
     args = parser.parse_args()
 
     config = load_config()
-
-    # Language selection
-    lang = args.lang or config.get("language") or detect_language()
-    if not (args.lang or config.get("language")):
-        print("1. English\n2. Italiano")
-        choice = input("Select Language: ").strip()
-        lang = 'it' if choice == '2' else 'en'
-        config["language"] = lang
-        save_config(config)
-    set_selected_language(lang)
-
-    print_banner()
-    mc_version = args.version or input(f" {BColors.BOLD}{get_string('enter_mc_version')}{BColors.ENDC}").strip()
-    if not mc_version:
-        print(get_string('invalid_version'))
-        sys.exit(1)
+    lang = select_language(args.lang, config)
+    mc_version = get_mc_version(args.version)
 
     logger.info(f"--- START SESSION (MC {mc_version}) ---")
     hardware = detect_hardware()
@@ -231,121 +389,27 @@ def main():
     if cf_api_key:
         logger.info(f"CurseForge API key loaded: {cf_api_key[:4]}...{cf_api_key[-4:] if len(cf_api_key) >= 8 else '***'}")
     client = APIClient(cf_api_key=cf_api_key)
-    stats = DownloadStats()
     base_dir = Path.cwd() / "modpack"
-    
-    # Process Categories
-    categories = [
-        ("mods", "mod", base_dir / f"mods_core_{mc_version}", "💎 CORE MODS", None),
-        ("curseforge_mods", "mod_cf", base_dir / f"mods_core_{mc_version}", "🔥 CURSEFORGE MODS", None),
-        ("light_qol_mods", "mod", base_dir / f"mods_light_qol_{mc_version}", "💡 LIGHT QOL", "install_light_qol"),
-        ("medium_qol_mods", "mod", base_dir / f"mods_medium_qol_{mc_version}", "🎭 MEDIUM QOL", "install_medium_qol"),
-        ("survival_qol_mods", "mod", base_dir / f"mods_survival_{mc_version}", "⚔️ SURVIVAL QOL", "install_survival_qol")
-    ]
 
-    for config_key, p_type, out_dir, title, flag in categories:
+    # Process mod categories
+    for config_key, project_type, subdir, title, flag in MOD_CATEGORIES:
         mod_list = config.get(config_key, [])
-        if not mod_list: 
+        if not mod_list:
             if flag in ["install_medium_qol", "install_survival_qol"] and not args.yes:
-                 print(f"\n{BColors.WARNING}{get_string('no_survival_qol_found' if flag == 'install_survival_qol' else 'no_medium_qol_found')}{BColors.ENDC}")
-            continue
-        
-        # Decide if we should process this category
-        should_process = True
-        if flag:
-            enabled_in_config = config.get(flag, False) if flag != "install_light_qol" else config.get(flag, True)
-            if flag == "install_light_qol":
-                should_process = enabled_in_config
-            else:
-                # Per Medium e Survival: in batch mode usiamo il config, in interattivo chiediamo sempre
-                if args.yes:
-                    should_process = enabled_in_config
-                else:
-                    prompt_key = 'install_medium_qol_prompt' if flag == "install_medium_qol" else 'install_survival_qol_prompt'
-                    should_process = input(f"\n{BColors.BOLD}{get_string(prompt_key)}{BColors.ENDC}").lower().startswith(('y', 's'))
-
-        if not should_process:
+                print(f"\n{BColors.WARNING}{get_string('no_survival_qol_found' if flag == 'install_survival_qol' else 'no_medium_qol_found')}{BColors.ENDC}")
             continue
 
-        print_section_header(title)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        installed = read_all_mod_info(out_dir)
-        active_list, skipped = filter_mods(mod_list, mc_version, config)
-        
-        for mod_name, reason in skipped:
-            print(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{mod_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Skipped{BColors.ENDC}")
-            print(f"   {BColors.DIM}Reason: {reason}{BColors.ENDC}")
-            logger.info(f"Skipped: {mod_name} - {reason}")
+        if not should_process_category(flag, config, args.yes):
+            continue
 
-        with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            if p_type == "mod_cf":
-                futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, stats) for m in active_list]
-            else:
-                futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, p_type, out_dir, installed, stats) for m in active_list]
-            for _ in as_completed(futures): pass
+        out_dir = base_dir / f"{subdir}_{mc_version}"
+        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads)
 
-    stats.print_summary()
+    # Process texture packs
+    process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir)
 
-    # --- TEXTURE PACKS ---
-    tp_list = config.get("texture_packs", [])
-    if tp_list:
-        do_tp = args.yes
-        if not do_tp:
-            do_tp = input(f"\n{BColors.BOLD}{get_string('download_texture_packs_prompt')}{BColors.ENDC}").lower().startswith(('y', 's'))
-
-        if do_tp:
-            tp_dir = base_dir / f"texture_packs_{mc_version}"
-            tp_dir.mkdir(parents=True, exist_ok=True)
-            print_section_header("🎨 TEXTURE PACKS")
-            
-            tp_stats = DownloadStats()
-            with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, tp_stats) for tp in tp_list]
-                for f in as_completed(futures): pass
-            
-            tp_stats.print_summary()
-                
-            if args.yes or input(f"\n{BColors.BOLD}{get_string('copy_texture_packs_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
-                dest_tps = get_destination_path("resourcepacks_folder", False, args.yes, config)
-                if dest_tps:
-                    config["resourcepacks_folder"] = str(dest_tps)
-                    save_config(config)
-                    dest_tps.mkdir(parents=True, exist_ok=True)
-                    print(f"{BColors.OKBLUE}{get_string('copying_files_to', None, dest_tps)}{BColors.ENDC}")
-                    for f in tp_dir.glob("*.zip"):
-                        shutil.copy(f, dest_tps)
-                        print(f"  {BColors.OKGREEN}{get_string('copied_file', None, f.name)}{BColors.ENDC}")
-
-    # Final Copy Logic (All Mods)
-    if args.yes or input(f"\n{BColors.BOLD}{get_string('copy_mods_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
-        dest = get_destination_path("mods_folder", True, args.yes, config)
-        if dest:
-            config["mods_folder"] = str(dest)
-            save_config(config)
-            dest.mkdir(parents=True, exist_ok=True)
-            if args.yes or input(f"{BColors.WARNING}{get_string('delete_existing_files_prompt')}{BColors.ENDC}").lower().startswith(('y', 's')):
-                for f in dest.glob("*.jar"): f.unlink()
-            
-            # Collect and copy all jars from all enabled categories
-            all_jars = []
-            for cfg_key, _, out_dir, _, flag in categories:
-                # Check if this category was supposed to be processed
-                if not config.get(cfg_key): continue
-                
-                should_have_processed = True
-                if flag:
-                    should_have_processed = config.get(flag, False) if flag != "install_light_qol" else config.get(flag, True)
-                
-                if should_have_processed and out_dir.exists():
-                    all_jars.extend(out_dir.glob("*.jar"))
-            
-            if all_jars:
-                print(f"{BColors.OKBLUE}{get_string('copying_files_to', None, dest)}{BColors.ENDC}")
-                for f in all_jars:
-                    shutil.copy(f, dest)
-                    print(f"  {BColors.OKGREEN}{get_string('copied_file', None, f.name)}{BColors.ENDC}")
-            else:
-                print(f"{BColors.WARNING}No mods found to copy.{BColors.ENDC}")
+    # Copy mods to destination
+    copy_mods_to_destination(config, args.yes, base_dir, mc_version)
 
     print(f"\n{BColors.HEADER}{get_string('script_finished')}{BColors.ENDC}")
 
