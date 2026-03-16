@@ -1,5 +1,14 @@
 # 🚀 MC Quarry
 
+```
+    __  _________     ____                             
+   /  |/  / ____/    / __ \__  ______ _____________  __
+  / /|_/ / /  ______/ / / / / / / __ `/ ___/ ___/ / / /
+ / /  / / /__/_____/ /_/ / /_/ / /_/ / /  / /  / /_/ / 
+/_/  /_/\____/     \___\_\__,_/\__,_/_/  /_/   \__, /  
+                                              /____/   
+```
+
 **Modrinth Modpack Downloader** — Automate downloading and managing Minecraft (Fabric) mods and texture packs from Modrinth.
 
 [![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
