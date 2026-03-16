@@ -41,7 +41,7 @@ from mc_quarry.ui_manager import (
     get_string, print_banner, print_section_header, print_download_summary,
     detect_language, set_selected_language, detect_hardware
 )
-from mc_quarry.api_client import APIClient
+from mc_quarry.api_client import APIClient, CF_MOD_CLASS_ID, CF_RESOURCE_PACK_CLASS_ID
 from mc_quarry.downloader import (
     read_all_mod_info, filter_mods, execute_download
 )
@@ -118,7 +118,8 @@ def process_mod_category(
     mc_version: str,
     args_yes: bool,
     threads: int,
-    global_stats: DownloadStats
+    global_stats: DownloadStats,
+    hardware: Dict[str, Any]
 ) -> None:
     """Process a single mod category (download mods)."""
     mod_list = config.get(config_key, [])
@@ -128,7 +129,7 @@ def process_mod_category(
     print_section_header(title)
     out_dir.mkdir(parents=True, exist_ok=True)
     installed = read_all_mod_info(out_dir)
-    active_list, skipped = filter_mods(mod_list, mc_version, config)
+    active_list, skipped = filter_mods(mod_list, mc_version, config, hardware)
 
     for mod_name, reason in skipped:
         print(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{mod_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Skipped{BColors.ENDC}")
@@ -290,6 +291,7 @@ def process_modrinth_wrapper(client: APIClient, name: str, mc_version: str, proj
         if logs: print("\n".join(logs))
 
 def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
+    """Process a mod/resource pack from CurseForge."""
     clean_name = name.strip()
     if "curseforge.com" in clean_name:
         clean_name = clean_name.rstrip('/').split('/')[-1]
@@ -302,14 +304,16 @@ def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, pr
         stats.add_not_found(clean_name)
     else:
         try:
-            cf_class_id = 6 if project_type == 'mod' else 12
+            # Use constants instead of magic numbers
+            cf_class_id = CF_MOD_CLASS_ID if project_type == 'mod' else CF_RESOURCE_PACK_CLASS_ID
             cf_project = client.search_curseforge(clean_name, class_id=cf_class_id)
-            
+
             if not cf_project:
                 log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
                 log(f"   {BColors.DIM}Provider: CurseForge | Query: {clean_name}{BColors.ENDC}")
                 stats.add_not_found(clean_name)
             else:
+                # mod_loader_type: 4 = Fabric, 0 = any (for resource packs)
                 cf_loader = 4 if project_type == 'mod' else 0
                 cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
                 
@@ -332,6 +336,11 @@ def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, pr
         if logs: print("\n".join(logs))
 
 def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_config: Dict[str, Any]) -> Optional[Path]:
+    """
+    Get destination path for mods/resourcepacks with security validation.
+
+    Validates that paths are within safe directories to prevent path traversal attacks.
+    """
     current_folder = current_config.get(config_key, "")
     home = Path.home()
 
@@ -388,9 +397,33 @@ def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_
             return None
         instance = input(f"{BColors.BOLD}{get_string('enter_instance_name')}{BColors.ENDC}").strip()
         final_path = str(final_path).replace("<INSTANCE_NAME>", instance)
-    
-    if not final_path: return None
-    
+
+    if not final_path:
+        return None
+
+    # Security validation: prevent path traversal attacks
+    try:
+        resolved = Path(final_path).resolve()
+        home_resolved = Path.home().resolve()
+
+        # Check if path is within home directory
+        try:
+            resolved.relative_to(home_resolved)
+        except ValueError:
+            # Path is outside home - check if it's a known Minecraft location
+            known_minecraft_paths = [
+                Path("/usr/share/games/minecraft"),
+                Path("/opt/minecraft"),
+                Path("/usr/local/share/minecraft"),
+            ]
+            if not any(str(resolved).startswith(str(p)) for p in known_minecraft_paths):
+                logger.error(f"Path outside home directory rejected: {resolved}")
+                print(f"{BColors.FAIL}Error: Path must be within home directory or a known Minecraft location.{BColors.ENDC}")
+                return None
+    except Exception as e:
+        logger.error(f"Path validation failed: {e}")
+        return None
+
     p = Path(final_path)
     if p.parent and not p.parent.exists():
         try:
@@ -444,7 +477,7 @@ def main():
             continue
 
         out_dir = base_dir / f"{subdir}_{mc_version}"
-        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads, all_stats)
+        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads, all_stats, hardware)
 
     # Process texture packs
     process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir, all_stats)
