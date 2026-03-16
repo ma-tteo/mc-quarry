@@ -1,0 +1,319 @@
+{
+    "mods": [
+        "Sodium",
+        "Indium",
+        "Enhanced Block Entities",
+        "Lithium",
+        "FerriteCore",
+        "Krypton",
+        "BadOptimizations",
+        "ScalableLux",
+        "Phosphor",
+        "Starlight",
+        "Entity Culling",
+        "More Culling",
+        "Cull Leaves",
+        "Concurrent Chunk Management Engine (Fabric)",
+        "Noisium",
+        "Lithostitched",
+        "bobby",
+        "Chunky",
+        "Very Many Players (Fabric)",
+        "ServerCore",
+        "TT20",
+        "LMD",
+        "Noxesium",
+        "Octo-Lib",
+        "ModernFix",
+        "ModernFix-mVUS",
+        "Smooth Boot",
+        "FastQuit",
+        "FastLoad",
+        "FastAnim",
+        "LazyDFU",
+        "Ksyxis",
+        "Memory Leak Fix",
+        "Language Reload",
+        "Dynamic FPS",
+        "Exordium",
+        "ImmediatelyFast",
+        "Particle Core",
+        "Video Tape",
+        "ThreadTweak",
+        "Neruina",
+        "Debugify",
+        "Packet Fixer",
+        "Shut Up GL Error",
+        "MixinTrace",
+        "MixinTrace Reloaded [UNOFFICIAL]",
+        "ForgetMeChunk",
+        "No Chat Reports",
+        "Alternate Current",
+        "Clumps",
+        "Get It Together, Drops!",
+        "Nvidium",
+        "Spark",
+        "Almanac",
+        "Fabric API",
+        "Fabric Language Kotlin",
+        "Architectury API",
+        "Cloth Config API",
+        "https://modrinth.com/mod/configurable",
+        "YetAnotherConfigLib (YACL)",
+        "Forge Config API Port",
+        "Fzzy Config",
+        "JamLib",
+        "Puzzle"
+    ],
+    "texture_packs": [
+        "Chat Reporting Helper",
+        "Dramatic Skys",
+        "Even Better Enchants",
+        "Fresh Animations",
+        "Fresh Animations: Extensions",
+        "Fresh Moves",
+        "Icons",
+        "Low On Fire",
+        "Mandala's GUI - Dark mode",
+        "Mod Menu Helper",
+        "New Glowing Ores",
+        "Translations for Sodium"
+    ],
+    "incompatible_mods": {
+        "Don't Drop It!": [
+            "1.19.3+"
+        ],
+        "Enhanced Block Entities": [
+            "1.21.5+"
+        ],
+        "Exordium": [
+            "1.21.9+"
+        ],
+        "FastAnim": [
+            "1.20.2+"
+        ],
+        "FastLoad": [
+            "1.20.2+"
+        ],
+        "ForgetMeChunk": [
+            "1.19.3+"
+        ],
+        "Indium": [
+            "1.21.2+"
+        ],
+        "Ksyxis": [
+            "1.21.10+"
+        ],
+        "LazyDFU": [
+            "1.19.4+"
+        ],
+        "Memory Leak Fix": [
+            "1.21.5+"
+        ],
+        "MixinTrace": [
+            "1.21.2+"
+        ],
+        "MixinTrace Reloaded [UNOFFICIAL]": [
+            "<1.21.2"
+        ],
+        "Model Gap Fix": [
+            "1.21.11+"
+        ],
+        "ModernFix": [
+            "1.21.5+"
+        ],
+        "ModernFix-mVUS": [
+            "<1.21.5"
+        ],
+        "Nvidium": [
+            "<1.20"
+        ],
+        "Phosphor": [
+            "1.20+"
+        ],
+        "ScalableLux": [
+            "<1.20"
+        ],
+        "Smooth Boot": [
+            "1.21.4",
+            "1.21.5"
+        ],
+        "Starlight": [
+            "1.20+"
+        ],
+        "ThreadTweak": [
+            "1.21.6+"
+        ],
+        "Threaded Structures": [
+            "<1.20"
+        ],
+        "Video Tape": [
+            ">1.20.6"
+        ],
+        "dynamic-view-fabric": [
+            ">1.21.1"
+        ]
+    },
+    "survival_qol_mods": [
+        "Nature's Compass",
+        "Explorer's Compass",
+        "Waystones",
+        "Traveler's Backpack",
+        "Terralith",
+        "Tectonic",
+        "Nullscape",
+        "RightClick Harvest",
+        "Falling Tree",
+        "Universal Bone Meal",
+        "Easy Anvils",
+        "Easy Elytra Takeoff",
+        "Easy Magic",
+        "Trade Cycling",
+        "Fast Minecart",
+        "Comforts",
+        "Hold My Items",
+        "More Mob Variants",
+        "Nyf's Spiders",
+        "Herds Panic",
+        "Horse Buff",
+        "RPG Difficulty",
+        "Farmers Delight Refabricated",
+        "Snow! Real Magic!",
+        "Soul Fired",
+        "WorldEdit",
+        "Cobweb",
+        "Collective",
+        "Creative Core",
+        "Crystal Lib",
+        "Iceberg",
+        "Item Highlighter",
+        "MRU",
+        "OOO Lib",
+        "Prism",
+        "Prometheus",
+        "Puzzles Lib",
+        "Reforged",
+        "Trinkets",
+        "Union Lib"
+    ],
+    "install_light_qol": true,
+    "light_qol_mods": [
+        "BetterF3",
+        "MiniHUD",
+        "AppleSkin",
+        "Status Effect Bars",
+        "Better Mount HUD",
+        "uku's Armor HUD",
+        "Held Item Info",
+        "Ping View",
+        "Inventory Profiles Next",
+        "Mouse Tweaks",
+        "Mouse Wheelie",
+        "Shulker Box Tooltip",
+        "Roughly Enough Items (REI)",
+        "litematica",
+        "litematica-printer",
+        "malilib",
+        "libIPN",
+        "CustomHitboxes",
+        "3D Skin Layers",
+        "[EMF] Entity Model Features",
+        "[ETF] Entity Texture Features",
+        "Animatica",
+        "BetterGrassify",
+        "LambDynamicLights",
+        "OptiGUI",
+        "Iris Shaders",
+        "Capes",
+        "Chat Heads",
+        "View Model",
+        "FreeCam",
+        "Mod Menu",
+        "Smooth Gui",
+        "Smooth Scrolling",
+        "Smooth Swapping",
+        "Immersive UI",
+        "Remove Reloading Screen",
+        "Reese's Sodium Options",
+        "Sodium Extra",
+        "Zoomify",
+        "Gamma-Utils",
+        "Boat Item View",
+        "Wakes",
+        "WalksyLib",
+        "More Chat History",
+        "Resourcify",
+        "Don't Drop It!",
+        "Cubes Without Borders",
+        "Controlify",
+        "e4mc",
+        "Hero's Anchor Optimizer",
+        "Marlow's Crystal Optimizer",
+        "Model Gap Fix",
+        "ukulib",
+        "Your Options Shall Be Respected (YOSBR)"
+    ],
+    "install_medium_qol": false,
+    "medium_qol_mods": [
+        "Ambient Sounds",
+        "Auditory",
+        "Drip Sounds",
+        "Immersive Thunder",
+        "Presence Footsteps",
+        "Sound Physics Remastered",
+        "Sounds",
+        "Continuity",
+        "Falling Leaves",
+        "Cave Dust",
+        "Make Bubbles Pop",
+        "Particular",
+        "Visuality",
+        "Effective",
+        "Enhanced Visuals",
+        "Euphoria Patches",
+        "Vanilla Refresh",
+        "Eating Animation",
+        "Not Enough Animations",
+        "Camera Overhaul",
+        "Better Third Person",
+        "Wavey Capes",
+        "Advancement Plaques",
+        "Better Advancements",
+        "Blur (Fabric)",
+        "Item Borders",
+        "Legendary Tooltips",
+        "Disable Custom Worlds Advice",
+        "Better Beds",
+        "Connectable Chains",
+        "Diagonal Fences",
+        "Super Better Grass",
+        "Xaero's Minimap",
+        "Xaero's World Map",
+        "Cherished Worlds",
+        "Jade",
+        "Replay Mod"
+    ],
+    "requirements": {
+        "Nvidium": {
+            "gpu": "nvidia"
+        },
+        "Concurrent Chunk Management Engine (Fabric)": {
+            "min_cpu_cores": 8
+        }
+    },
+    "conflicts": {
+        "ScalableLux": [
+            "Phosphor",
+            "Starlight"
+        ],
+        "Starlight": [
+            "Phosphor"
+        ]
+    },
+    "curseforge_mods": [
+        "Connectivity",
+        "Cupboard",
+        "dynamic-view-fabric"
+    ],
+    "curseforge_texture_packs": []
+}
