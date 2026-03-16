@@ -1,6 +1,7 @@
 import json
 import time
 import logging
+import random
 import requests
 from typing import Dict, Any, List, Optional, Union
 from .utils import BColors
@@ -18,7 +19,19 @@ class APIClient:
         self.session.headers.update(HEADERS)
 
     def get_json(self, url: str, max_retries: int = 4, backoff: float = 1.5, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None) -> Optional[Union[Dict[str, Any], List[Any]]]:
-        """Esegue una GET request con retry avanzati."""
+        """
+        Execute GET request with exponential backoff retry logic.
+        
+        Args:
+            url: API endpoint URL
+            max_retries: Maximum number of retry attempts
+            backoff: Base backoff time in seconds
+            params: Optional query parameters
+            headers: Optional request headers
+            
+        Returns:
+            Parsed JSON response or None on failure
+        """
         current_headers = headers if headers else {}
         for attempt in range(1, max_retries + 1):
             try:
@@ -28,7 +41,8 @@ class APIClient:
                 elif r.status_code == 404:
                     return None
                 elif r.status_code == 429:
-                    wait_time = int(r.headers.get("Retry-After", backoff * (2 ** attempt)))
+                    # Rate limited - use server-specified retry time or exponential backoff
+                    wait_time = int(r.headers.get("Retry-After", backoff * (2 ** (attempt - 1))))
                     logger.warning(f"Rate limited (429) on {url}. Waiting {wait_time}s...")
                     time.sleep(wait_time)
                     continue
@@ -39,8 +53,10 @@ class APIClient:
                     logger.debug(f"API Error {r.status_code} for {url} (Attempt {attempt})")
             except requests.RequestException as e:
                 logger.debug(f"Network Error {e} for {url} (Attempt {attempt})")
-            
-            time.sleep(backoff * (attempt ** 2))
+
+            # Exponential backoff with jitter to avoid thundering herd
+            wait_time = min(backoff * (2 ** (attempt - 1)) + random.uniform(0, 1), 60)
+            time.sleep(wait_time)
         return None
 
     # --- Modrinth API ---

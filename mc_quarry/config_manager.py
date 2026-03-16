@@ -12,13 +12,13 @@ logger = logging.getLogger("mc-quarry")
 
 def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     """
-    Carica la configurazione da config.json. 
-    Se manca, prova a ripristinarla da config_clean.json.
+    Load configuration from config.json.
+    Restore from config_clean.json if missing.
     """
     path = Path(config_path)
     clean_path = Path(CLEAN_CONFIG_FILE)
     
-    # Se il file principale manca ma esiste quello pulito, ripristiniamo
+    # Restore config from clean copy if missing
     if not path.exists() and clean_path.exists():
         try:
             shutil.copyfile(str(clean_path), str(path))
@@ -50,6 +50,7 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
         except (json.JSONDecodeError, IOError) as e:
             logger.warning(f"Config file {config_path} is corrupted. Error: {e}")
             try:
+                # Backup corrupted config before creating new one
                 shutil.copyfile(str(path), f"{config_path}.bak")
                 logger.info(f"Backup of corrupted config created at {config_path}.bak")
             except Exception as backup_err:
@@ -61,7 +62,7 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     return default_config
 
 def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
-    """Salva le modifiche alla configurazione su disco."""
+    """Save configuration to disk."""
     path = Path(config_path)
     try:
         with path.open('w') as f:
