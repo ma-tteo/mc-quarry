@@ -23,8 +23,8 @@ dist/
 
 # Temp & Debug
 /tmp/
-debug_*.py
-test_table_*.py
+scripts/debug_*.py
+scripts/test_table_*.py
 
 # Modpack data
 modpack/mods_*/
