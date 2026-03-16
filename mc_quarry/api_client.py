@@ -6,8 +6,17 @@ import requests
 from typing import Dict, Any, List, Optional, Union
 from .utils import BColors
 
+# Modrinth API base URL
 BASE_API = "https://api.modrinth.com"
+
+# CurseForge API base URL and constants
 CF_API_BASE = "https://api.curseforge.com"
+CF_GAME_ID = 432  # Minecraft
+CF_MOD_CLASS_ID = 6  # Mod category
+CF_RESOURCE_PACK_CLASS_ID = 12  # Texture pack category
+CF_SORT_FIELD_RELEVANCE = 2  # Sort by relevance
+
+# HTTP headers for API requests
 HEADERS = {"User-Agent": "modpack-downloader/3.0"}
 
 logger = logging.getLogger("mc-quarry")
@@ -101,15 +110,25 @@ class APIClient:
     def get_cf_headers(self) -> Dict[str, str]:
         return {"x-api-key": self.cf_api_key}
 
-    def search_curseforge(self, name: str, class_id: int = 6) -> Optional[Dict[str, Any]]:
+    def search_curseforge(self, name: str, class_id: int = CF_MOD_CLASS_ID) -> Optional[Dict[str, Any]]:
+        """
+        Search CurseForge for a mod or resource pack.
+        
+        Args:
+            name: Project name to search
+            class_id: CF_MOD_CLASS_ID for mods, CF_RESOURCE_PACK_CLASS_ID for texture packs
+            
+        Returns:
+            First search result or None
+        """
         if not self.cf_api_key:
             return None
         url = f"{CF_API_BASE}/v1/mods/search"
         params = {
-            'gameId': 432,
+            'gameId': CF_GAME_ID,
             'classId': class_id,
             'searchFilter': name,
-            'sortField': 2,
+            'sortField': CF_SORT_FIELD_RELEVANCE,
             'sortOrder': 'desc',
             'limit': 5
         }

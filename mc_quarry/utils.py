@@ -69,14 +69,6 @@ def get_visual_length(text: str) -> int:
         i += 1
     return length
 
-def format_time(seconds: float) -> str:
-    """Format seconds into human-readable string."""
-    if seconds < 60:
-        return f"{seconds:.1f}s"
-    minutes = int(seconds // 60)
-    secs = seconds % 60
-    return f"{minutes}m {secs:.1f}s"
-
 def sanitize_filename(name: str) -> str:
     """Remove invalid characters from filename."""
     return "".join(c for c in name if c.isalnum() or c in " .-_()[]'").strip()
