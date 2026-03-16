@@ -279,16 +279,16 @@ def get_string(key: str, lang: Optional[str] = None, *args) -> str:
     return s
 
 def print_banner():
-    banner = fr"""
-{BColors.OKCYAN}______  ___________   _______                                     
-___   |/  /_  ____/   __  __ \___  _______ ___________________  __
-__  /|_/ /_  / ________  / / /  / / /  __ `/_  ___/_  ___/_  / / /
-_  /  / / / /___/_____/ /_/ // /_/ // /_/ /_  /   _  /   _  /_/ / 
-/_/  /_/  \____/      \___\_\\__,_/ \__,_/ /_/    /_/    _\__, /  
-                                                         /____/   {BColors.ENDC}
-    """
+    """Print ASCII art banner."""
+    banner = rf"""{BColors.OKCYAN}
+    __  _________     ____                             
+   /  |/  / ____/    / __ \__  ______ _____________  __
+  / /|_/ / /  ______/ / / / / / / __ `/ ___/ ___/ / / /
+ / /  / / /__/_____/ /_/ / /_/ / /_/ / /  / /  / /_/ / 
+/_/  /_/\____/     \___\_\__,_/\__,_/_/  /_/   \__, /  
+                                              /____/   
+{BColors.ENDC}"""
     print(banner)
-
 def print_section_header(title: str, icon: str = "", color: str = BColors.OKCYAN):
     """Stampa un header di sezione con bordi Unicode."""
     inner_width = BOX_WIDTH - 2
