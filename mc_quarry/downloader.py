@@ -79,7 +79,7 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
     return installed
 
 def compare_versions(v1: str, v2: str) -> int:
-    """Ritorna 1 se v1 > v2, -1 se v1 < v2, 0 se uguali."""
+    """Return 1 if v1 > v2, -1 if v1 < v2, 0 if equal."""
     try:
         ver1, ver2 = pkg_version.parse(v1), pkg_version.parse(v2)
         if ver1 > ver2: return 1
@@ -109,10 +109,26 @@ def check_incompatibility(mod_name: str, mc_version: str, config: Dict[str, Any]
                     return True, f"Skipping '{mod_name}' on {mc_version} (incompatible by rule: {ver_rule})"
     return False, None
 
-def filter_mods(mod_list: List[str], mc_version: str, config: Dict[str, Any]) -> Tuple[List[str], List[str]]:
+def filter_mods(mod_list: List[str], mc_version: str, config: Dict[str, Any], hardware: Optional[Dict[str, Any]] = None) -> Tuple[List[str], List[str]]:
+    """
+    Filter mods based on compatibility rules and hardware requirements.
+
+    Args:
+        mod_list: List of mod names to filter
+        mc_version: Minecraft version to check compatibility against
+        config: Configuration dict with incompatibility and conflict rules
+        hardware: Optional hardware info dict (calls detect_hardware() if not provided)
+
+    Returns:
+        Tuple of (eligible_mods, skipped_reasons)
+    """
     eligible_mods = []
     skipped_reasons = []
-    hardware = detect_hardware()
+
+    # Detect hardware once if not provided
+    if hardware is None:
+        hardware = detect_hardware()
+
     hardware_rules = config.get("requirements", {})
     
     for mod in mod_list:

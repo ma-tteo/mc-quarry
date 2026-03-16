@@ -293,40 +293,34 @@ def print_banner():
 {BColors.ENDC}"""
     print(banner)
 def print_section_header(title: str, icon: str = "", color: str = BColors.OKCYAN):
-    """Stampa un header di sezione con bordi Unicode."""
+    """Print a section header with Unicode borders."""
     inner_width = BOX_WIDTH - 2
     content = f" {icon}  {title}" if icon else f" {title}"
     v_len = get_visual_length(content)
     padding = inner_width - v_len
     if padding < 0: padding = 0
-    
+
     print(f"\n{color}╔{'═' * inner_width}╗{BColors.ENDC}")
     print(f"{color}║{BColors.ENDC}{BColors.BOLD}{content}{BColors.ENDC}{' ' * padding}{color}║{BColors.ENDC}")
     print(f"{color}╚{'═' * inner_width}╝{BColors.ENDC}")
 
-def print_sub_header(text: str, color: str = BColors.DIM):
-    """Stampa un sotto-titolo leggero con larghezza armonizzata."""
-    line_width = BOX_WIDTH - 4
-    print(f"  {color}{'─' * line_width}{BColors.ENDC}")
-    print(f"  {color}{text}{BColors.ENDC}")
-    print(f"  {color}{'─' * line_width}{BColors.ENDC}")
 
 def print_progress_bar(current: int, total: int, width: int = 30, label: str = ""):
-    """Stampa una barra di progresso inline con percentuale."""
+    """Print a progress bar with percentage. (Currently unused)"""
     if total == 0:
         return
     ratio = current / total
     filled = int(width * ratio)
     bar = '█' * filled + '░' * (width - filled)
     pct = int(ratio * 100)
-    
+
     if pct < 33:
         bar_color = BColors.FAIL
     elif pct < 66:
         bar_color = BColors.WARNING
     else:
         bar_color = BColors.OKGREEN
-    
+
     line = f"\r  {bar_color}{bar}{BColors.ENDC}  {BColors.BOLD}{current}{BColors.ENDC}/{total}  {BColors.DIM}[{pct}%]{BColors.ENDC}"
     if label:
         line += f"  {BColors.DIM}{label}{BColors.ENDC}"
@@ -409,8 +403,6 @@ def detect_hardware() -> Dict[str, Any]:
 
 def print_download_summary(stats: Any) -> None:
     """Print download summary with ASCII art header."""
-    from typing import Tuple  # Avoid circular import at module level
-    
     inner_width = BOX_WIDTH - 2
     indent_val = 2
 

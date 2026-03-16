@@ -2,6 +2,7 @@ import json
 import time
 import logging
 import random
+from functools import lru_cache
 import requests
 from typing import Dict, Any, List, Optional, Union
 from .utils import BColors
@@ -80,7 +81,12 @@ class APIClient:
     def get_modrinth_project(self, slug: str) -> Optional[Dict[str, Any]]:
         return self.get_json(f"{BASE_API}/v2/project/{slug}")
 
+    @lru_cache(maxsize=128)
     def find_modrinth_version(self, project_id: str, mc_version: str, loader: str = 'fabric', force_latest: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Find the latest compatible version for a project.
+        Results are cached to avoid repeated API calls for the same project/version.
+        """
         params = {}
         if not force_latest:
             params["game_versions"] = json.dumps([mc_version])
