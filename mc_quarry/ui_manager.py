@@ -1,9 +1,12 @@
 import sys
 import os
 import locale
+import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 from .utils import BColors, BOX_WIDTH, get_visual_length
+
+logger = logging.getLogger("mc-quarry")
 
 translations: Dict[str, Dict[str, str]] = {
     'script_title': {
@@ -334,11 +337,16 @@ def print_progress_bar(current: int, total: int, width: int = 30, label: str = "
         sys.stdout.flush()
 
 def detect_hardware() -> Dict[str, Any]:
-    """Rileva l'hardware del sistema (GPU e CPU). Supporta Linux, Windows, macOS."""
+    """
+    Detect system hardware (GPU and CPU).
+    
+    Returns:
+        Dict with 'gpu' (nvidia/amd/intel/apple/generic) and 'cpu_cores'
+    """
     import os
     import subprocess
     hardware = {"gpu": "generic", "cpu_cores": os.cpu_count() or 1}
-    
+
     try:
         if sys.platform == "linux":
             # Try lspci first (most common on Linux)
@@ -350,17 +358,18 @@ def detect_hardware() -> Dict[str, Any]:
                     hardware["gpu"] = "amd"
                 elif 'intel' in output:
                     hardware["gpu"] = "intel"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
                 # Fallback: check /sys/class/drm (works on most Linux without lspci)
+                logger.debug(f"lspci failed, trying /sys/module fallback: {e}")
                 try:
                     for driver in ['nvidia', 'radeon', 'amdgpu', 'i915']:
                         if Path(f"/sys/module/{driver}").exists():
                             hardware["gpu"] = "nvidia" if driver == "nvidia" else "amd" if driver in ['radeon', 'amdgpu'] else "intel"
                             break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Hardware detection via /sys/module failed: {e}")
         elif sys.platform == "win32":
-            # Windows: use wmic or powershell
+            # Windows: use wmic
             try:
                 output = subprocess.check_output(
                     ['wmic', 'path', 'win32_videocontroller', 'get', 'name'],
@@ -372,8 +381,8 @@ def detect_hardware() -> Dict[str, Any]:
                     hardware["gpu"] = "amd"
                 elif 'intel' in output:
                     hardware["gpu"] = "intel"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-                pass
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+                logger.debug(f"Windows GPU detection failed: {e}")
         elif sys.platform == "darwin":
             # macOS: use system_profiler
             try:
@@ -389,12 +398,12 @@ def detect_hardware() -> Dict[str, Any]:
                     hardware["gpu"] = "apple"  # Apple Silicon integrated
                 elif 'nvidia' in output:
                     hardware["gpu"] = "nvidia"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-                pass
-    except Exception:
-        # Silent fail - keep generic
-        pass
-    
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+                logger.debug(f"macOS GPU detection failed: {e}")
+    except Exception as e:
+        # Log unexpected errors but keep generic fallback
+        logger.debug(f"Hardware detection failed: {e}")
+
     return hardware
 
 
