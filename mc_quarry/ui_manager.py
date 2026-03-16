@@ -1,6 +1,7 @@
 import sys
 import os
 import locale
+from pathlib import Path
 from typing import Dict, Any, Optional
 from .utils import BColors, BOX_WIDTH, get_visual_length
 
@@ -333,21 +334,67 @@ def print_progress_bar(current: int, total: int, width: int = 30, label: str = "
         sys.stdout.flush()
 
 def detect_hardware() -> Dict[str, Any]:
-    """Rileva l'hardware del sistema (GPU e CPU)."""
+    """Rileva l'hardware del sistema (GPU e CPU). Supporta Linux, Windows, macOS."""
     import os
     import subprocess
     hardware = {"gpu": "generic", "cpu_cores": os.cpu_count() or 1}
-    if sys.platform == "linux":
-        try:
-            output = subprocess.check_output(['lspci'], stderr=subprocess.STDOUT).decode('utf-8').lower()
-            if 'nvidia' in output:
-                hardware["gpu"] = "nvidia"
-            elif 'amd' in output or 'ati' in output:
-                hardware["gpu"] = "amd"
-            elif 'intel' in output:
-                hardware["gpu"] = "intel"
-        except:
-            pass
+    
+    try:
+        if sys.platform == "linux":
+            # Try lspci first (most common on Linux)
+            try:
+                output = subprocess.check_output(['lspci'], stderr=subprocess.STDOUT, timeout=10).decode('utf-8').lower()
+                if 'nvidia' in output:
+                    hardware["gpu"] = "nvidia"
+                elif 'amd' in output or 'ati' in output:
+                    hardware["gpu"] = "amd"
+                elif 'intel' in output:
+                    hardware["gpu"] = "intel"
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                # Fallback: check /sys/class/drm (works on most Linux without lspci)
+                try:
+                    for driver in ['nvidia', 'radeon', 'amdgpu', 'i915']:
+                        if Path(f"/sys/module/{driver}").exists():
+                            hardware["gpu"] = "nvidia" if driver == "nvidia" else "amd" if driver in ['radeon', 'amdgpu'] else "intel"
+                            break
+                except Exception:
+                    pass
+        elif sys.platform == "win32":
+            # Windows: use wmic or powershell
+            try:
+                output = subprocess.check_output(
+                    ['wmic', 'path', 'win32_videocontroller', 'get', 'name'],
+                    stderr=subprocess.STDOUT, timeout=10
+                ).decode('utf-8', errors='ignore').lower()
+                if 'nvidia' in output:
+                    hardware["gpu"] = "nvidia"
+                elif 'amd' in output or 'ati' in output or 'radeon' in output:
+                    hardware["gpu"] = "amd"
+                elif 'intel' in output:
+                    hardware["gpu"] = "intel"
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                pass
+        elif sys.platform == "darwin":
+            # macOS: use system_profiler
+            try:
+                output = subprocess.check_output(
+                    ['system_profiler', 'SPDisplaysDataType'],
+                    stderr=subprocess.STDOUT, timeout=10
+                ).decode('utf-8', errors='ignore').lower()
+                if 'amd' in output or 'radeon' in output:
+                    hardware["gpu"] = "amd"
+                elif 'intel' in output:
+                    hardware["gpu"] = "intel"
+                elif 'apple' in output:
+                    hardware["gpu"] = "apple"  # Apple Silicon integrated
+                elif 'nvidia' in output:
+                    hardware["gpu"] = "nvidia"
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                pass
+    except Exception:
+        # Silent fail - keep generic
+        pass
+    
     return hardware
 
 

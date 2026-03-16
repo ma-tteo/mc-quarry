@@ -3,8 +3,9 @@
 **Modrinth Modpack Downloader** — Automate downloading and managing Minecraft (Fabric) mods and texture packs from Modrinth.
 
 [![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 [![Modrinth](https://img.shields.io/badge/Source-Modrinth-1bd96a?logo=modrinth)](https://modrinth.com/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](README.md)
 
 ---
 
@@ -19,6 +20,7 @@
 | 🌍 **Multi-language** | Italian, English, Spanish, French |
 | 📂 **Direct Installation** | Automatic copy to your instance folder (PrismLauncher, MultiMC, vanilla) |
 | 📊 **Local Metadata** | `.modinfo` files to track installed versions |
+| 💻 **Cross-Platform** | Windows, macOS, Linux (Ubuntu, Fedora, Arch, Gentoo, Void) |
 
 ---
 
@@ -121,6 +123,30 @@ mc-quarry/
 
 ---
 
+## 💻 Platform Compatibility
+
+MC Quarry works on all major operating systems:
+
+| Platform | Supported | Notes |
+|----------|-----------|-------|
+| **Windows** | ✅ Yes | Tested on Windows 10/11 |
+| **macOS** | ✅ Yes | Intel and Apple Silicon |
+| **Linux** | ✅ Yes | Ubuntu, Fedora, Arch, Gentoo, Void, and others |
+
+### Linux Distro Support
+
+| Distro | Package Manager | Tested |
+|--------|-----------------|--------|
+| Ubuntu/Debian | apt | ✅ |
+| Fedora/RHEL | dnf | ✅ |
+| Arch Linux | pacman | ✅ |
+| Gentoo | portage | ✅ |
+| Void Linux | xbps | ✅ |
+
+**Requirements:** Python 3.x and `pip install requests packaging`
+
+---
+
 ## 📄 Documentation
 
 - **[MODS_INFO.md](MODS_INFO.md)** — Detailed description of all included mods
@@ -145,7 +171,7 @@ python3 main.py
 
 ## 📝 License
 
-MIT License — see [LICENSE](LICENSE) file for details.
+GNU General Public License v3.0 — see [LICENSE](LICENSE) file for details.
 
 ---
 
