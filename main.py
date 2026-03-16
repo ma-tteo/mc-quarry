@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+"""
+MC Quarry - Modrinth & CurseForge Modpack Downloader
+Copyright (C) 2026 Matto244
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import sys
 import os
 import time
@@ -312,23 +329,36 @@ def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, pr
 def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_config: Dict[str, Any]) -> Optional[Path]:
     current_folder = current_config.get(config_key, "")
     home = Path.home()
-    
+
     default_suggested = ""
     if sys.platform == "win32":
+        # Windows
         default_suggested = home / "AppData/Roaming/.minecraft" / ("mods" if is_mod else "resourcepacks")
+    elif sys.platform == "darwin":
+        # macOS
+        default_suggested = home / "Library/Application Support/minecraft" / ("mods" if is_mod else "resourcepacks")
     elif sys.platform == "linux":
+        # Linux - check for various launcher locations
         flatpak_prism = home / ".var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances"
         standard_prism = home / ".local/share/PrismLauncher/instances"
         standard_multimc = home / ".local/share/multimc/instances"
-        
+        # Also check for .minecraft in home (most common across all distros)
+        vanilla_minecraft = home / ".minecraft"
+
         if flatpak_prism.exists():
             default_suggested = flatpak_prism / "<INSTANCE_NAME>/.minecraft/" / ("mods" if is_mod else "resourcepacks")
         elif standard_prism.exists():
             default_suggested = standard_prism / "<INSTANCE_NAME>/.minecraft/" / ("mods" if is_mod else "resourcepacks")
         elif standard_multimc.exists():
             default_suggested = standard_multimc / "<INSTANCE_NAME>/.minecraft/" / ("mods" if is_mod else "resourcepacks")
+        elif vanilla_minecraft.exists():
+            default_suggested = vanilla_minecraft / ("mods" if is_mod else "resourcepacks")
         else:
+            # Fallback to Flatpak mojang path (least common)
             default_suggested = home / ".var/app/com.mojang.Minecraft/data/minecraft/" / ("mods" if is_mod else "resourcepacks")
+    else:
+        # Unknown platform - use generic .minecraft
+        default_suggested = home / ".minecraft" / ("mods" if is_mod else "resourcepacks")
 
     final_path = ""
     if args_yes:
