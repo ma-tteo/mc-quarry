@@ -70,7 +70,7 @@ def get_visual_length(text: str) -> int:
     return length
 
 def format_time(seconds: float) -> str:
-    """Formatta i secondi in un formato leggibile."""
+    """Format seconds into human-readable string."""
     if seconds < 60:
         return f"{seconds:.1f}s"
     minutes = int(seconds // 60)
@@ -78,7 +78,7 @@ def format_time(seconds: float) -> str:
     return f"{minutes}m {secs:.1f}s"
 
 def sanitize_filename(name: str) -> str:
-    """Rimuove caratteri invalidi per i nomi dei file."""
+    """Remove invalid characters from filename."""
     return "".join(c for c in name if c.isalnum() or c in " .-_()[]'").strip()
 
 class DownloadStats:

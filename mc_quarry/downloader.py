@@ -13,24 +13,36 @@ from .ui_manager import get_string, detect_hardware
 logger = logging.getLogger("mc-quarry")
 
 def download_file(url: str, dest_path: Path, max_retries: int = 4) -> bool:
-    """Scarica un file con gestione dei retry."""
+    """
+    Download a file with retry logic.
+    
+    Args:
+        url: Download URL
+        dest_path: Destination file path
+        max_retries: Maximum retry attempts
+        
+    Returns:
+        True if download succeeded, False otherwise
+    """
     headers = {"User-Agent": "modpack-downloader/3.0"}
     for attempt in range(1, max_retries + 1):
         try:
             with requests.get(url, headers=headers, stream=True, timeout=60) as r:
-                if r.status_code == 200:
-                    with dest_path.open("wb") as out:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                out.write(chunk)
-                    return True
-        except requests.RequestException:
-            pass
-        time.sleep(1 * attempt)
+                r.raise_for_status()
+                with dest_path.open("wb") as out:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if chunk:
+                            out.write(chunk)
+                return True
+        except requests.RequestException as e:
+            logger.warning(f"Download attempt {attempt} failed for {url}: {e}")
+            if attempt < max_retries:
+                time.sleep(1 * attempt)
+    logger.error(f"Download failed after {max_retries} attempts: {url}")
     return False
 
 def write_mod_info(jar_path: Path, project_id: str, project_slug: str, version_id: str, version_name: str, filename: str, provider: str = "modrinth"):
-    """Salva un file .modinfo JSON."""
+    """Save .modinfo JSON metadata file."""
     info_path = jar_path.with_suffix(jar_path.suffix + ".modinfo")
     metadata = {
         "project_id": str(project_id),
@@ -47,6 +59,7 @@ def write_mod_info(jar_path: Path, project_id: str, project_slug: str, version_i
         logger.error(f"Error writing .modinfo for {filename}: {e}")
 
 def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
+    """Read all .modinfo files from directory and build index."""
     installed = {}
     for info_file in directory.glob("*.modinfo"):
         try:
@@ -59,6 +72,7 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
                         if "project_slug" in data:
                             installed[data["project_slug"]] = data
                     else:
+                        # Orphaned modinfo - jar file was deleted
                         info_file.unlink()
         except Exception:
             pass
@@ -136,28 +150,36 @@ def filter_mods(mod_list: List[str], mc_version: str, config: Dict[str, Any]) ->
 
     return final_mods, skipped_reasons
 
-def execute_download(display_name: str, project_id: str, project_slug: str, version_id: str, version_name: str, 
-                     filename: str, url: str, provider: str, output_dir: Path, 
+def execute_download(display_name: str, project_id: str, project_slug: str, version_id: str, version_name: str,
+                     filename: str, url: str, provider: str, output_dir: Path,
                      installed_mods: Dict[str, Any], stats: DownloadStats, log_func: Callable[[str], None], project_url: str = ""):
-    """Logica di download e aggiornamento comune a entrambi i provider"""
+    """
+    Execute download logic for a single mod/resource pack.
+    
+    Handles: up-to-date check, old version removal, download, and metadata writing.
+    """
     file_name = sanitize_filename(filename)
     dest_path = output_dir / file_name
-    
+
+    # Check if mod is already installed
     installed_data = installed_mods.get(project_id) or installed_mods.get(project_slug)
     needs_download = True
 
-    # Prepara info riga 2
+    # Prepare status message
     info_parts = [f"📦 {version_name}", f"🌐 {provider.capitalize()}"]
     if project_url: info_parts.append(f"🔗 {BColors.UNDERLINE}{project_url}{BColors.ENDC}")
     details = f"   {BColors.DIM}{' | '.join(info_parts)}{BColors.ENDC}"
 
+    # Case 1: Mod already installed - check if up-to-date
     if installed_data:
         if str(installed_data.get("version_id")) == str(version_id) and installed_data.get("provider") == provider:
+            # Already up-to-date
             log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}✅ Up to date{BColors.ENDC}")
             log_func(details)
             stats.add_skipped_up_to_date()
             needs_download = False
         else:
+            # Update available - remove old version
             old_ver = installed_data.get('version_name', '?')
             log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKCYAN}🔄 Update{BColors.ENDC} ({old_ver} → {version_name})")
             log_func(details)
@@ -171,6 +193,7 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
                 except Exception as e:
                     logger.error(f"Error removing old file {old_path}: {e}")
 
+    # Case 2: File exists but no metadata - index it
     if needs_download:
         if dest_path.exists() and not installed_data:
             log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Indexed{BColors.ENDC}")
@@ -178,6 +201,7 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
             write_mod_info(dest_path, project_id, project_slug, version_id, version_name, file_name, provider)
             stats.add_installed()
         else:
+            # Case 3: Download new file
             if download_file(url, dest_path):
                 log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}📥 Downloaded{BColors.ENDC}")
                 log_func(details)

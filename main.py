@@ -38,13 +38,12 @@ from mc_quarry.downloader import (
     read_all_mod_info, filter_mods, execute_download
 )
 
-# Setup logging
+# Setup logging - file only, no console output (use --debug for verbose)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.FileHandler("mc-quarry.log"),
-        # logging.StreamHandler() # Enable for debug
     ]
 )
 logger = logging.getLogger("mc-quarry")
