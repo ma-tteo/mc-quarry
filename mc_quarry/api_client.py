@@ -2,7 +2,6 @@ import json
 import time
 import logging
 import random
-from functools import lru_cache
 import requests
 from typing import Dict, Any, List, Optional, Union
 from .utils import BColors
@@ -22,11 +21,14 @@ HEADERS = {"User-Agent": "modpack-downloader/3.0"}
 
 logger = logging.getLogger("mc-quarry")
 
+
 class APIClient:
     def __init__(self, cf_api_key: str = ""):
         self.cf_api_key = cf_api_key
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
+        # Manual cache for version lookups (avoid lru_cache on instance methods)
+        self._version_cache: Dict[str, Optional[Dict[str, Any]]] = {}
 
     def get_json(self, url: str, max_retries: int = 4, backoff: float = 1.5, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None) -> Optional[Union[Dict[str, Any], List[Any]]]:
         """
@@ -81,21 +83,30 @@ class APIClient:
     def get_modrinth_project(self, slug: str) -> Optional[Dict[str, Any]]:
         return self.get_json(f"{BASE_API}/v2/project/{slug}")
 
-    @lru_cache(maxsize=128)
     def find_modrinth_version(self, project_id: str, mc_version: str, loader: str = 'fabric', force_latest: bool = False) -> Optional[Dict[str, Any]]:
         """
         Find the latest compatible version for a project.
         Results are cached to avoid repeated API calls for the same project/version.
         """
+        # Create cache key from parameters
+        cache_key = f"{project_id}:{mc_version}:{loader}:{force_latest}"
+        
+        # Check cache first
+        if cache_key in self._version_cache:
+            return self._version_cache[cache_key]
+        
         params = {}
         if not force_latest:
             params["game_versions"] = json.dumps([mc_version])
         if loader:
             params["loaders"] = json.dumps([loader])
         versions = self.get_json(f"{BASE_API}/v2/project/{project_id}/version", params=params)
-        if isinstance(versions, list) and len(versions) > 0:
-            return versions[0]
-        return None
+        
+        # Cache result
+        result = versions[0] if isinstance(versions, list) and len(versions) > 0 else None
+        self._version_cache[cache_key] = result
+        
+        return result
 
     def pick_file_from_version(self, version_json: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if not version_json:
