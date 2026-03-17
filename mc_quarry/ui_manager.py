@@ -402,7 +402,12 @@ def detect_hardware() -> Dict[str, Any]:
 
 
 def print_download_summary(stats: Any) -> None:
-    """Print download summary with ASCII art header."""
+    """
+    Print comprehensive download summary with statistics.
+    
+    Shows: installed, updated, up-to-date, skipped, failed mods
+    with a clean ASCII art header.
+    """
     inner_width = BOX_WIDTH - 2
     indent_val = 2
 
@@ -411,7 +416,20 @@ def print_download_summary(stats: Any) -> None:
         padding = inner_width - v_len - indent
         print(f"{row_color}║{BColors.ENDC}{' ' * indent}{content}{' ' * max(0, padding)}{row_color}║{BColors.ENDC}")
 
+    # Calculate totals
+    total_processed = stats.installed + stats.updated + stats.skipped_up_to_date
+    total_skipped = stats.skipped_incompatible + len(stats.not_found) + len([f for f in stats.failed])
+    total = total_processed + total_skipped
+
     print(f"\n{BColors.OKBLUE}╔{'═' * inner_width}╗{BColors.ENDC}")
+    
+    # Title
+    title = f" DOWNLOAD COMPLETE ({total} mods) "
+    title_padding = (inner_width - len(title)) // 2
+    print(f"{BColors.OKBLUE}║{BColors.ENDC}{' ' * title_padding}{BColors.BOLD}{BColors.OKCYAN}{title}{BColors.ENDC}{' ' * (inner_width - title_padding - len(title))}{BColors.OKBLUE}║{BColors.ENDC}")
+    
+    print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
+    
     # ASCII ART Header
     content_header = [
         fr"{BColors.HEADER}{BColors.BOLD} ___ ___ ___ ___ ___ ___  _  _   ___ _   _ __  __ __  __   _   _____   __ {BColors.ENDC}",
@@ -424,25 +442,39 @@ def print_download_summary(stats: Any) -> None:
 
     print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
 
-    print_row(f"{BColors.OKGREEN}✅ Installed: {BColors.BOLD}{stats.installed}{BColors.ENDC}")
-    print_row(f"{BColors.OKCYAN}🔄 Updated:   {BColors.BOLD}{stats.updated}{BColors.ENDC}")
-    print_row(f"{BColors.OKBLUE}💤 Up to date:{BColors.BOLD}{stats.skipped_up_to_date}{BColors.ENDC}")
-    print_row(f"{BColors.WARNING}⚠️  Incompat.: {BColors.BOLD}{stats.skipped_incompatible}{BColors.ENDC}")
-
+    # Statistics
+    print_row(f"{BColors.OKGREEN}✅ Installed:     {BColors.BOLD}{stats.installed:>5}{BColors.ENDC}")
+    print_row(f"{BColors.OKCYAN}🔄 Updated:       {BColors.BOLD}{stats.updated:>5}{BColors.ENDC}")
+    print_row(f"{BColors.OKBLUE}💤 Up to date:    {BColors.BOLD}{stats.skipped_up_to_date:>5}{BColors.ENDC}")
+    print_row(f"{BColors.WARNING}⚠️  Skipped:       {BColors.BOLD}{stats.skipped_incompatible:>5}{BColors.ENDC}")
+    
+    # Show errors if any
     if stats.not_found or stats.failed:
         print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
-        max_label_len = inner_width - indent_val - 4
-        for name in stats.not_found:
-            safe_name = name[:max_label_len-12] + "..." if len(name) > max_label_len-12 else name
-            print_row(f"{BColors.FAIL}❌ NOT FOUND: {BColors.ENDC}{BColors.BOLD}{safe_name}{BColors.ENDC}")
-        for name, reason in stats.failed:
-            detail = f" ({reason})" if reason else ""
-            available = inner_width - indent_val - 15
-            full_text = f"{name}{detail}"
-            if len(full_text) > available:
-                safe_text = full_text[:available-3] + "..."
-            else:
-                safe_text = full_text
-            print_row(f"{BColors.FAIL}❌ FAILED:    {BColors.ENDC}{BColors.BOLD}{safe_text}{BColors.ENDC}")
+        
+        # Not found
+        if stats.not_found:
+            print_row(f"{BColors.FAIL}❌ Not Found:    {BColors.BOLD}{len(stats.not_found):>5}{BColors.ENDC}")
+        
+        # Failed
+        if stats.failed:
+            print_row(f"{BColors.FAIL}❌ Failed:        {BColors.BOLD}{len(stats.failed):>5}{BColors.ENDC}")
+        
+        # Show details (limit to first 10)
+        max_display = 10
+        details_shown = 0
+        
+        for name in stats.not_found[:max_display]:
+            safe_name = name[:40] + "..." if len(name) > 40 else name
+            print_row(f"{BColors.DIM}   • {safe_name}{BColors.ENDC}", indent=indent_val + 2)
+            details_shown += 1
+        
+        for name, reason in stats.failed[:max_display - details_shown]:
+            safe_name = f"{name[:30]} ({reason[:20]})" if len(name) > 30 else f"{name} ({reason})"
+            print_row(f"{BColors.DIM}   • {safe_name}{BColors.ENDC}", indent=indent_val + 2)
+        
+        if len(stats.not_found) + len(stats.failed) > max_display:
+            remaining = len(stats.not_found) + len(stats.failed) - max_display
+            print_row(f"{BColors.DIM}   ... and {remaining} more{BColors.ENDC}", indent=indent_val + 2)
 
     print(f"{BColors.OKBLUE}╚{'═' * inner_width}╝{BColors.ENDC}\n")
