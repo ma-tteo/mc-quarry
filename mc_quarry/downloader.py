@@ -174,8 +174,14 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
                      installed_mods: Dict[str, Any], stats: DownloadStats, log_func: Callable[[str], None], project_url: str = ""):
     """
     Execute download logic for a single mod/resource pack.
-    
+
     Handles: up-to-date check, old version removal, download, and metadata writing.
+    
+    Color scheme:
+    - ✅ OKGREEN: Success (installed, up-to-date, downloaded)
+    - 🔄 OKCYAN: Update available
+    - ⚠️  WARNING: Indexed (file exists, no metadata)
+    - ❌ FAIL: Download failed
     """
     file_name = sanitize_filename(filename)
     dest_path = output_dir / file_name
@@ -184,9 +190,10 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
     installed_data = installed_mods.get(project_id) or installed_mods.get(project_slug)
     needs_download = True
 
-    # Prepare status message
+    # Prepare status message with provider info
     info_parts = [f"📦 {version_name}", f"🌐 {provider.capitalize()}"]
-    if project_url: info_parts.append(f"🔗 {BColors.UNDERLINE}{project_url}{BColors.ENDC}")
+    if project_url:
+        info_parts.append(f"🔗 {BColors.UNDERLINE}{project_url}{BColors.ENDC}")
     details = f"   {BColors.DIM}{' | '.join(info_parts)}{BColors.ENDC}"
 
     # Case 1: Mod already installed - check if up-to-date
@@ -208,7 +215,8 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
                 try:
                     old_path.unlink()
                     info_path = old_path.with_suffix(old_path.suffix + ".modinfo")
-                    if info_path.exists(): info_path.unlink()
+                    if info_path.exists():
+                        info_path.unlink()
                 except Exception as e:
                     logger.error(f"Error removing old file {old_path}: {e}")
 
@@ -225,7 +233,8 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
                 log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}📥 Downloaded{BColors.ENDC}")
                 log_func(details)
                 write_mod_info(dest_path, project_id, project_slug, version_id, version_name, file_name, provider)
-                if not installed_data: stats.add_installed()
+                if not installed_data:
+                    stats.add_installed()
             else:
                 log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.FAIL}❌ Failed{BColors.ENDC}")
                 log_func(details)
