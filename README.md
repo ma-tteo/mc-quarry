@@ -107,6 +107,37 @@ python3 main.py --version 1.21.1 --yes
 
 ---
 
+## 🛠️ Debug Scripts
+
+MC Quarry includes utility scripts for troubleshooting and validation:
+
+### Test API Connectivity
+Test Modrinth and CurseForge API connections:
+```bash
+# Test Modrinth API
+python3 scripts/test_connection.py --modrinth
+
+# Test CurseForge API (requires API key)
+python3 scripts/test_connection.py --curseforge --key YOUR_API_KEY
+
+# Test both
+python3 scripts/test_connection.py
+```
+
+### Validate Configuration
+Check config.json for errors and missing fields:
+```bash
+python3 scripts/validate_config.py [config.json]
+```
+
+### Test Hardware Detection
+Verify GPU and CPU detection:
+```bash
+python3 scripts/test_hardware.py
+```
+
+---
+
 ## 📂 Folder Structure
 
 ```
@@ -117,17 +148,23 @@ mc-quarry/
 ├── requirements.txt        # Python dependencies
 ├── MODS_INFO.md            # Detailed mod documentation
 ├── mc-quarry.log           # Operation logs
+├── LICENSE                 # GPL-3 License
+├── scripts/                # Debug and utility scripts
+│   ├── test_connection.py  # Test API connectivity
+│   ├── validate_config.py  # Validate config.json
+│   └── test_hardware.py    # Test hardware detection
 ├── mc_quarry/              # Python module
 │   ├── __init__.py
-│   ├── api_client.py       # Modrinth API client
+│   ├── api_client.py       # Modrinth/CurseForge API client
 │   ├── config_manager.py   # Configuration management
 │   ├── downloader.py       # Download logic
 │   ├── ui_manager.py       # UI and translations
 │   └── utils.py            # Various utilities
 └── modpack/                # Local downloads
-    ├── mods 1.21.1/
-    ├── mods_qol 1.21.1/
-    └── texture_packs 1.21.1/
+    ├── mods_core_1.21.1/
+    ├── mods_light_qol_1.21.1/
+    ├── mods_survival_1.21.1/
+    └── texture_packs_1.21.1/
 ```
 
 ---
@@ -153,6 +190,41 @@ MC Quarry works on all major operating systems:
 | Void Linux | xbps | ✅ |
 
 **Requirements:** Python 3.x and `pip install requests packaging`
+
+---
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+#### "429 Rate Limited" Error
+**Cause:** Too many API requests in a short time.  
+**Solution:** Wait a few minutes and try again. The script has automatic retry with exponential backoff.
+
+#### "CurseForge API Key missing"
+**Cause:** CurseForge requires an API key for downloads.  
+**Solution:** Get a free key from [CurseForge Console](https://console.curseforge.com/) and set it:
+```bash
+# Option 1: Environment variable (recommended)
+export CURSEFORGE_API_KEY="your-api-key-here"
+
+# Option 2: Add to config.json
+{
+    "curseforge_api_key": "your-api-key-here"
+}
+```
+
+#### "No compatible version found"
+**Cause:** The mod doesn't support your Minecraft version or loader.  
+**Solution:** Check the mod page on Modrinth/CurseForge for supported versions.
+
+#### "Path outside home directory rejected"
+**Cause:** Security feature prevents writing to arbitrary system paths.  
+**Solution:** Use a path within your home directory or a known Minecraft location.
+
+#### Download fails silently
+**Cause:** Network issues or firewall blocking.  
+**Solution:** Check `mc-quarry.log` for detailed error messages.
 
 ---
 
