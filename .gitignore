@@ -26,6 +26,11 @@ dist/
 scripts/debug_*.py
 scripts/test_table_*.py
 
+# Analysis Reports (generated)
+*_report.json
+ANALYSIS_REPORT.md
+analysis_summary.json
+
 # Modpack data
 modpack/mods_*/
 modpack/texture_packs_*/

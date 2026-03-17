@@ -70,8 +70,9 @@ def test_curseforge(api_key: str):
     print("=" * 60)
 
     if not api_key:
-        print("  ⚠️  No API key provided. Use --key YOUR_API_KEY")
-        return False
+        print("  ℹ️  No API key provided. Skipping CurseForge tests.")
+        print("  ℹ️  Use --key YOUR_API_KEY to test CurseForge")
+        return True  # Not a failure, just skipped
 
     client = APIClient(cf_api_key=api_key)
     start = time.time()
