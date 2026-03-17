@@ -72,6 +72,140 @@ MOD_CATEGORIES = [
 ]
 
 
+def _process_mod_wrapper(
+    client: APIClient,
+    name: str,
+    mc_version: str,
+    project_type: str,
+    output_dir: Path,
+    installed_mods: Dict[str, Any],
+    stats: DownloadStats,
+    provider: str
+) -> None:
+    """
+    Generic wrapper for processing mods from any provider (Modrinth/CurseForge).
+    
+    Args:
+        client: APIClient instance
+        name: Mod name or URL
+        mc_version: Target Minecraft version
+        project_type: 'mod' or 'resourcepack'
+        output_dir: Directory to save downloaded files
+        installed_mods: Dict of already installed mods
+        stats: DownloadStats instance for tracking
+        provider: 'modrinth' or 'curseforge'
+    """
+    clean_name = name.strip()
+    logs = []
+    def log(msg): logs.append(msg)
+
+    try:
+        project = None
+        
+        if provider == "modrinth":
+            # Handle Modrinth
+            if "modrinth.com" in clean_name:
+                slug = clean_name.rstrip('/').split('/')[-1]
+                project_data = client.get_modrinth_project(slug)
+                if project_data:
+                    project = {
+                        "project_id": project_data["id"],
+                        "slug": project_data["slug"],
+                        "title": project_data["title"]
+                    }
+
+            if not project:
+                search_results = client.search_modrinth(clean_name, project_type)
+                if search_results and "hits" in search_results and search_results["hits"]:
+                    hits = search_results["hits"]
+                    name_low = clean_name.lower()
+                    for h in hits:
+                        if h.get("title", "").lower() == name_low or h.get("slug", "").lower() == name_low:
+                            project = h
+                            break
+                    if not project:
+                        project = hits[0]
+
+            if project:
+                title = project.get("title") or project.get("name")
+                loader = 'fabric' if project_type == 'mod' else None
+                pid = project["project_id"] if "project_id" in project else project["id"]
+                latest_version = client.find_modrinth_version(pid, mc_version, loader=loader)
+
+                if not latest_version and project_type == 'resourcepack':
+                    latest_version = client.find_modrinth_version(pid, mc_version, loader=None, force_latest=True)
+
+                if latest_version:
+                    file_info = client.pick_file_from_version(latest_version)
+                    if file_info:
+                        project_url = f"https://modrinth.com/{project_type}/{project['slug']}"
+                        execute_download(
+                            clean_name, pid, project["slug"],
+                            latest_version["id"], latest_version["name"],
+                            file_info["filename"], file_info["url"],
+                            "modrinth", output_dir, installed_mods, stats, log, project_url
+                    )
+                    return
+                else:
+                    log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
+                    log(f"   {BColors.DIM}Provider: Modrinth | MC: {mc_version}{BColors.ENDC}")
+                    stats.add_failed(title, "No compatible version found")
+                    return
+            
+            log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
+            log(f"   {BColors.DIM}Provider: Modrinth | Query: {clean_name}{BColors.ENDC}")
+            stats.add_not_found(clean_name)
+
+        elif provider == "curseforge":
+            # Handle CurseForge
+            if not client.cf_api_key:
+                log(f"{BColors.BOLD}{clean_name}{BColors.ENDC}: {BColors.FAIL}❌ CF API Key missing{BColors.ENDC}")
+                stats.add_not_found(clean_name)
+                return
+
+            if "curseforge.com" in clean_name:
+                clean_name = clean_name.rstrip('/').split('/')[-1]
+
+            cf_class_id = CF_MOD_CLASS_ID if project_type == 'mod' else CF_RESOURCE_PACK_CLASS_ID
+            cf_project = client.search_curseforge(clean_name, class_id=cf_class_id)
+
+            if not cf_project:
+                log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
+                log(f"   {BColors.DIM}Provider: CurseForge | Query: {clean_name}{BColors.ENDC}")
+                stats.add_not_found(clean_name)
+                return
+
+            cf_loader = 4 if project_type == 'mod' else 0
+            cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
+
+            if not cf_file:
+                log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
+                log(f"   {BColors.DIM}Provider: CurseForge | MC: {mc_version}{BColors.ENDC}")
+                stats.add_failed(cf_project['name'], "No compatible version on CF")
+                return
+
+            project_url = cf_project.get('links', {}).get('websiteUrl', 
+                f"https://www.curseforge.com/minecraft/{'mc-mods' if project_type=='mod' else 'texture-packs'}/{cf_project['slug']}")
+            
+            execute_download(
+                clean_name, str(cf_project['id']), cf_project['slug'],
+                str(cf_file['id']), cf_file.get('displayName', str(cf_file['id'])),
+                cf_file['fileName'], cf_file['downloadUrl'],
+                "curseforge", output_dir, installed_mods, stats, log, project_url
+            )
+            return
+
+    except Exception as e:
+        log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ System Error{BColors.ENDC}")
+        log(f"   {BColors.DIM}Detail: {e}{BColors.ENDC}")
+        stats.add_failed(clean_name, str(e))
+        logger.exception(f"{provider} processing error for {clean_name}")
+
+    with print_lock:
+        if logs:
+            print("\n".join(logs))
+
+
 def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
     """Select language from args, config, or user input."""
     lang = args_lang or config.get("language") or detect_language()
@@ -239,111 +373,15 @@ def copy_mods_to_destination(config: Dict[str, Any], args_yes: bool, base_dir: P
     else:
         print(f"{BColors.WARNING}No mods found to copy.{BColors.ENDC}")
 
+
 def process_modrinth_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
-    clean_name = name.strip()
-    logs = []
-    def log(msg): logs.append(msg)
+    """Wrapper for Modrinth downloads (uses unified _process_mod_wrapper)."""
+    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "modrinth")
 
-    try:
-        project = None
-        if "modrinth.com" in clean_name:
-            slug = clean_name.rstrip('/').split('/')[-1]
-            project_data = client.get_modrinth_project(slug)
-            if project_data:
-                project = {"project_id": project_data["id"], "slug": project_data["slug"], "title": project_data["title"]}
-
-        if not project:
-            search_results = client.search_modrinth(clean_name, project_type)
-            if search_results and "hits" in search_results and search_results["hits"]:
-                hits = search_results["hits"]
-                name_low = clean_name.lower()
-                for h in hits:
-                    if h.get("title", "").lower() == name_low or h.get("slug", "").lower() == name_low:
-                        project = h
-                        break
-                if not project: project = hits[0]
-        
-        if not project:
-            log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
-            log(f"   {BColors.DIM}Provider: Modrinth | Query: {clean_name}{BColors.ENDC}")
-            stats.add_not_found(clean_name)
-        else:
-            title = project.get("title") or project.get("name")
-            loader = 'fabric' if project_type == 'mod' else None
-            pid = project["project_id"] if "project_id" in project else project["id"]
-            latest_version = client.find_modrinth_version(pid, mc_version, loader=loader)
-            
-            if not latest_version and project_type == 'resourcepack':
-                 latest_version = client.find_modrinth_version(pid, mc_version, loader=None, force_latest=True)
-
-            if not latest_version:
-                log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
-                log(f"   {BColors.DIM}Provider: Modrinth | MC: {mc_version}{BColors.ENDC}")
-                stats.add_failed(title, "No compatible version found")
-            else:
-                file_info = client.pick_file_from_version(latest_version)
-                if not file_info:
-                    log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No file{BColors.ENDC}")
-                    log(f"   {BColors.DIM}Provider: Modrinth | Version: {latest_version['name']}{BColors.ENDC}")
-                    stats.add_failed(title, "No file to download")
-                else:
-                    project_url = f"https://modrinth.com/{project_type}/{project['slug']}"
-                    execute_download(clean_name, pid, project["slug"], 
-                                     latest_version["id"], latest_version["name"], file_info["filename"], file_info["url"], 
-                                     "modrinth", output_dir, installed_mods, stats, log, project_url)
-    except Exception as e:
-        log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ System Error{BColors.ENDC}")
-        log(f"   {BColors.DIM}Detail: {e}{BColors.ENDC}")
-        stats.add_failed(clean_name, str(e))
-        logger.exception(f"Modrinth processing error for {clean_name}")
-    
-    with print_lock:
-        if logs: print("\n".join(logs))
 
 def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
-    """Process a mod/resource pack from CurseForge."""
-    clean_name = name.strip()
-    if "curseforge.com" in clean_name:
-        clean_name = clean_name.rstrip('/').split('/')[-1]
-
-    logs = []
-    def log(msg): logs.append(msg)
-
-    if not client.cf_api_key:
-        log(f"{BColors.BOLD}{clean_name}{BColors.ENDC}: {BColors.FAIL}❌ CF API Key missing{BColors.ENDC}")
-        stats.add_not_found(clean_name)
-    else:
-        try:
-            # Use constants instead of magic numbers
-            cf_class_id = CF_MOD_CLASS_ID if project_type == 'mod' else CF_RESOURCE_PACK_CLASS_ID
-            cf_project = client.search_curseforge(clean_name, class_id=cf_class_id)
-
-            if not cf_project:
-                log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
-                log(f"   {BColors.DIM}Provider: CurseForge | Query: {clean_name}{BColors.ENDC}")
-                stats.add_not_found(clean_name)
-            else:
-                # mod_loader_type: 4 = Fabric, 0 = any (for resource packs)
-                cf_loader = 4 if project_type == 'mod' else 0
-                cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
-                
-                if not cf_file:
-                    log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
-                    log(f"   {BColors.DIM}Provider: CurseForge | MC: {mc_version}{BColors.ENDC}")
-                    stats.add_failed(cf_project['name'], "No compatible version on CF")
-                else:
-                    project_url = cf_project.get('links', {}).get('websiteUrl', f"https://www.curseforge.com/minecraft/{'mc-mods' if project_type=='mod' else 'texture-packs'}/{cf_project['slug']}")
-                    execute_download(clean_name, str(cf_project['id']), cf_project['slug'], str(cf_file['id']), 
-                                     cf_file.get('displayName', str(cf_file['id'])), cf_file['fileName'], 
-                                     cf_file['downloadUrl'], "curseforge", output_dir, installed_mods, stats, log, project_url)
-        except Exception as e:
-            log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ System Error{BColors.ENDC}")
-            log(f"   {BColors.DIM}Detail: {e}{BColors.ENDC}")
-            stats.add_failed(clean_name, str(e))
-            logger.exception(f"CurseForge processing error for {clean_name}")
-    
-    with print_lock:
-        if logs: print("\n".join(logs))
+    """Wrapper for CurseForge downloads (uses unified _process_mod_wrapper)."""
+    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "curseforge")
 
 def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_config: Dict[str, Any]) -> Optional[Path]:
     """

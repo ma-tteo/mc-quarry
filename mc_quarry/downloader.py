@@ -74,8 +74,11 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
                     else:
                         # Orphaned modinfo - jar file was deleted
                         info_file.unlink()
-        except Exception:
-            pass
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Corrupted modinfo file {info_file}: {e}")
+            info_file.unlink()
+        except Exception as e:
+            logger.error(f"Unexpected error reading {info_file}: {e}")
     return installed
 
 def compare_versions(v1: str, v2: str) -> int:
