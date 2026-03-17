@@ -280,9 +280,11 @@ def process_mod_category(
         print(f"   {BColors.DIM}Reason: {reason}{BColors.ENDC}")
         logger.info(f"Skipped: {mod_name} - {reason}")
 
-    # Print separator before downloads
+    # Print prominent download header
     if active_list:
-        print(f"{BColors.DIM}Downloading {len(active_list)} mod(s)...{BColors.ENDC}\n")
+        print(f"\n{BColors.OKCYAN}{'─' * 60}{BColors.ENDC}")
+        print(f"{BColors.BOLD}{BColors.OKCYAN}  📥 Downloading {len(active_list)} mod(s)...{BColors.ENDC}")
+        print(f"{BColors.OKCYAN}{'─' * 60}{BColors.ENDC}\n")
 
     # Process downloads and wait for completion
     with ThreadPoolExecutor(max_workers=threads) as executor:
