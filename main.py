@@ -203,6 +203,7 @@ def _print_with_lock(msg: str) -> None:
     """Print a message with thread safety."""
     with print_lock:
         print(msg)
+        sys.stdout.flush()  # Force immediate output
 
 
 def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
@@ -364,7 +365,7 @@ def process_texture_packs(
     tp_dir.mkdir(parents=True, exist_ok=True)
     print_section_header("🎨 TEXTURE PACKS")
 
-    # Use global stats instead of local one
+    # Use global stats
     with ThreadPoolExecutor(max_workers=threads) as executor:
         futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, global_stats) for tp in tp_list]
         for _ in as_completed(futures):
