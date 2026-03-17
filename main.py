@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import sys
 import os
+import re
 import time
 import shutil
 import argparse
@@ -56,6 +57,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mc-quarry")
 
+# Semantic version pattern for Minecraft versions (e.g., 1.21.11, 1.20.1-beta.3)
+MC_VERSION_PATTERN = re.compile(r'^\d+\.\d+(\.\d+)?([+-][a-zA-Z0-9.]+)?$')
+
 print_lock = threading.Lock()
 
 # Category definition: (config_key, project_type, output_subdir, title, config_flag)
@@ -82,11 +86,17 @@ def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
 
 
 def get_mc_version(args_version: Optional[str]) -> str:
-    """Get Minecraft version from args or user input."""
+    """Get Minecraft version from args or user input with validation."""
     version = args_version or input(f" {BColors.BOLD}{get_string('enter_mc_version')}{BColors.ENDC}").strip()
     if not version:
         print(get_string('invalid_version'))
         sys.exit(1)
+    
+    # Validate version format
+    if not MC_VERSION_PATTERN.match(version):
+        print(f"{BColors.FAIL}Invalid version format. Use semantic versioning (e.g., 1.21.11){BColors.ENDC}")
+        sys.exit(1)
+    
     return version
 
 
@@ -417,8 +427,8 @@ def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_
                 Path("/usr/local/share/minecraft"),
             ]
             if not any(str(resolved).startswith(str(p)) for p in known_minecraft_paths):
-                logger.error(f"Path outside home directory rejected: {resolved}")
-                print(f"{BColors.FAIL}Error: Path must be within home directory or a known Minecraft location.{BColors.ENDC}")
+                logger.error("Path validation failed: path outside allowed directories")
+                print(f"{BColors.FAIL}Error: Invalid path. Use a path within your home directory.{BColors.ENDC}")
                 return None
     except Exception as e:
         logger.error(f"Path validation failed: {e}")
@@ -458,7 +468,7 @@ def main():
     # Load CurseForge API key from environment variable (preferred) or config
     cf_api_key = os.getenv("CURSEFORGE_API_KEY", config.get("curseforge_api_key", ""))
     if cf_api_key:
-        logger.info(f"CurseForge API key loaded: {cf_api_key[:4]}...{cf_api_key[-4:] if len(cf_api_key) >= 8 else '***'}")
+        logger.info("CurseForge API key loaded from environment/config")
     client = APIClient(cf_api_key=cf_api_key)
     base_dir = Path.cwd() / "modpack"
     
