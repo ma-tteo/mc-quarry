@@ -274,11 +274,49 @@ def process_mod_category(
     installed = read_all_mod_info(out_dir)
     active_list, skipped = filter_mods(mod_list, mc_version, config, hardware)
 
-    # Print skipped mods FIRST (before downloads start)
+    # Group skipped mods by reason category
+    skipped_by_reason = {
+        'incompatible': [],
+        'hardware': [],
+        'other': []
+    }
+    
     for mod_name, reason in skipped:
-        print(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{mod_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Skipped{BColors.ENDC}")
-        print(f"   {BColors.DIM}Reason: {reason}{BColors.ENDC}")
-        logger.info(f"Skipped: {mod_name} - {reason}")
+        reason_lower = reason.lower()
+        if 'incompatible' in reason_lower or 'incompatible by rule' in reason_lower:
+            skipped_by_reason['incompatible'].append((mod_name, reason))
+        elif 'cores' in reason_lower or 'gpu' in reason_lower or 'requires' in reason_lower:
+            skipped_by_reason['hardware'].append((mod_name, reason))
+        else:
+            skipped_by_reason['other'].append((mod_name, reason))
+    
+    # Print grouped skip summary
+    total_skipped = len(skipped)
+    if total_skipped > 0:
+        print(f"\n{BColors.WARNING}⚠️  Skipped {total_skipped} mod(s):{BColors.ENDC}")
+        
+        if skipped_by_reason['incompatible']:
+            count = len(skipped_by_reason['incompatible'])
+            mods = ', '.join([m[0] for m in skipped_by_reason['incompatible'][:5]])
+            if count > 5:
+                mods += f" (+{count - 5} more)"
+            print(f"   {BColors.DIM}Incompatible ({count}):{BColors.ENDC} {mods}")
+        
+        if skipped_by_reason['hardware']:
+            count = len(skipped_by_reason['hardware'])
+            for mod_name, reason in skipped_by_reason['hardware']:
+                print(f"   {BColors.DIM}Hardware ({count}):{BColors.ENDC} {mod_name} ({reason})")
+        
+        if skipped_by_reason['other']:
+            count = len(skipped_by_reason['other'])
+            mods = ', '.join([m[0] for m in skipped_by_reason['other'][:5]])
+            if count > 5:
+                mods += f" (+{count - 5} more)"
+            print(f"   {BColors.DIM}Other ({count}):{BColors.ENDC} {mods}")
+        
+        # Log detailed skip reasons
+        for mod_name, reason in skipped:
+            logger.info(f"Skipped: {mod_name} - {reason}")
 
     # Print prominent download header
     if active_list:
