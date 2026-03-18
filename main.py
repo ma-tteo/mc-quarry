@@ -40,7 +40,7 @@ from mc_quarry.utils import BColors, DownloadStats, BOX_WIDTH
 from mc_quarry.config_manager import load_config, save_config
 from mc_quarry.ui_manager import (
     get_string, print_banner, print_section_header, print_download_summary,
-    detect_language, set_selected_language, detect_hardware
+    detect_language, set_selected_language, detect_hardware, ui
 )
 from mc_quarry.api_client import APIClient, CF_MOD_CLASS_ID, CF_RESOURCE_PACK_CLASS_ID
 from mc_quarry.downloader import (
@@ -60,8 +60,6 @@ logger = logging.getLogger("mc-quarry")
 # Semantic version pattern for Minecraft versions (e.g., 1.21.11, 1.20.1-beta.3)
 MC_VERSION_PATTERN = re.compile(r'^\d+\.\d+(\.\d+)?([+-][a-zA-Z0-9.]+)?$')
 
-print_lock = threading.Lock()
-
 # Category definition: (config_key, project_type, output_subdir, title, config_flag)
 MOD_CATEGORIES = [
     ("mods", "mod", "mods_core", "💎 CORE MODS", None),
@@ -80,11 +78,12 @@ def _process_mod_wrapper(
     output_dir: Path,
     installed_mods: Dict[str, Any],
     stats: DownloadStats,
-    provider: str
+    provider: str,
+    verbose: bool = False
 ) -> None:
     """
     Generic wrapper for processing mods from any provider (Modrinth/CurseForge).
-    Prints messages immediately (not buffered) for real-time feedback.
+    Prints messages via UI manager for thread safety.
     """
     clean_name = name.strip()
 
@@ -128,37 +127,44 @@ def _process_mod_wrapper(
                     file_info = client.pick_file_from_version(latest_version)
                     if file_info:
                         project_url = f"https://modrinth.com/{project_type}/{project['slug']}"
+                        
+                        ui.set_status(f"Processing {clean_name}...")
                         execute_download(
                             clean_name, pid, project["slug"],
                             latest_version["id"], latest_version["name"],
                             file_info["filename"], file_info["url"],
                             "modrinth", output_dir, installed_mods, stats, 
-                            lambda msg: _print_with_lock(msg), project_url
+                            lambda msg: ui.log(msg), project_url, verbose
                         )
+                        ui.update_progress()
                         return
                     else:
-                        _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No file{BColors.ENDC}")
-                        _print_with_lock(f"   {BColors.DIM}Provider: Modrinth | Version: {latest_version['name']}{BColors.ENDC}")
+                        ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No file{BColors.ENDC}")
                         stats.add_failed(title, "No file to download")
+                        ui.update_progress()
                         return
                 else:
-                    _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
-                    _print_with_lock(f"   {BColors.DIM}Provider: Modrinth | MC: {mc_version}{BColors.ENDC}")
+                    ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
                     stats.add_failed(title, "No compatible version found")
+                    ui.update_progress()
                     return
             
-            _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
-            _print_with_lock(f"   {BColors.DIM}Provider: Modrinth | Query: {clean_name}{BColors.ENDC}")
+            # Not found on Modrinth
+            # Only log if it's a hard failure (not if we might try CF later, though this block is final for Modrinth provider)
+            ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
             stats.add_not_found(clean_name)
+            ui.update_progress()
             return
 
         elif provider == "curseforge":
             # Handle CurseForge
             if not client.cf_api_key:
-                _print_with_lock(f"{BColors.BOLD}{clean_name}{BColors.ENDC}: {BColors.FAIL}❌ CF API Key missing{BColors.ENDC}")
+                ui.log(f"{BColors.BOLD}{clean_name}{BColors.ENDC}: {BColors.FAIL}❌ CF API Key missing{BColors.ENDC}")
                 stats.add_not_found(clean_name)
+                ui.update_progress()
                 return
-
+            
+            ui.set_status(f"Searching CF: {clean_name}...")
             if "curseforge.com" in clean_name:
                 clean_name = clean_name.rstrip('/').split('/')[-1]
 
@@ -166,18 +172,18 @@ def _process_mod_wrapper(
             cf_project = client.search_curseforge(clean_name, class_id=cf_class_id)
 
             if not cf_project:
-                _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
-                _print_with_lock(f"   {BColors.DIM}Provider: CurseForge | Query: {clean_name}{BColors.ENDC}")
+                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
                 stats.add_not_found(clean_name)
+                ui.update_progress()
                 return
 
             cf_loader = 4 if project_type == 'mod' else 0
             cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
 
             if not cf_file:
-                _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
-                _print_with_lock(f"   {BColors.DIM}Provider: CurseForge | MC: {mc_version}{BColors.ENDC}")
+                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
                 stats.add_failed(cf_project['name'], "No compatible version on CF")
+                ui.update_progress()
                 return
 
             project_url = cf_project.get('links', {}).get('websiteUrl', 
@@ -188,23 +194,17 @@ def _process_mod_wrapper(
                 str(cf_file['id']), cf_file.get('displayName', str(cf_file['id'])),
                 cf_file['fileName'], cf_file['downloadUrl'],
                 "curseforge", output_dir, installed_mods, stats, 
-                lambda msg: _print_with_lock(msg), project_url
+                lambda msg: ui.log(msg), project_url, verbose
             )
+            ui.update_progress()
             return
 
     except Exception as e:
-        _print_with_lock(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ System Error{BColors.ENDC}")
-        _print_with_lock(f"   {BColors.DIM}Detail: {e}{BColors.ENDC}")
+        ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ System Error{BColors.ENDC}")
+        ui.log(f"   {BColors.DIM}Detail: {e}{BColors.ENDC}")
         stats.add_failed(clean_name, str(e))
         logger.exception(f"{provider} processing error for {clean_name}")
-
-
-def _print_with_lock(msg: str) -> None:
-    """Print a message with thread safety."""
-    with print_lock:
-        print(msg)
-        sys.stdout.flush()  # Force immediate output
-
+        ui.update_progress()
 
 def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
     """Select language from args, config, or user input."""
@@ -251,7 +251,6 @@ def should_process_category(flag: Optional[str], config: Dict[str, Any], args_ye
     prompt_key = 'install_medium_qol_prompt' if flag == "install_medium_qol" else 'install_survival_qol_prompt'
     return input(f"\n{BColors.BOLD}{get_string(prompt_key)}{BColors.ENDC}").lower().startswith(('y', 's'))
 
-
 def process_mod_category(
     client: APIClient,
     config_key: str,
@@ -263,7 +262,8 @@ def process_mod_category(
     args_yes: bool,
     threads: int,
     global_stats: DownloadStats,
-    hardware: Dict[str, Any]
+    hardware: Dict[str, Any],
+    verbose: bool = False
 ) -> None:
     """Process a single mod category (download mods)."""
     mod_list = config.get(config_key, [])
@@ -319,25 +319,23 @@ def process_mod_category(
         for mod_name, reason in skipped:
             logger.info(f"Skipped: {mod_name} - {reason}")
 
-    # Print prominent download header
+    # Process downloads
     if active_list:
-        print(f"\n{BColors.OKCYAN}{'─' * 60}{BColors.ENDC}")
-        print(f"{BColors.BOLD}{BColors.OKCYAN}  📥 Downloading {len(active_list)} mod(s)...{BColors.ENDC}")
-        print(f"{BColors.OKCYAN}{'─' * 60}{BColors.ENDC}\n")
-
-    # Process downloads and wait for completion
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        if project_type == "mod_cf":
-            futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, global_stats) for m in active_list]
-        else:
-            futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, global_stats) for m in active_list]
+        ui.set_total(len(active_list))
+        ui.set_status(f"Downloading {title}...")
         
-        # Wait for all downloads to complete
-        for _ in as_completed(futures):
-            pass
-    
-    # Print newline after all downloads complete
-    print()
+        with ThreadPoolExecutor(max_workers=threads) as executor:
+            if project_type == "mod_cf":
+                futures = [executor.submit(process_curseforge_wrapper, client, m, mc_version, "mod", out_dir, installed, global_stats, verbose) for m in active_list]
+            else:
+                futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, global_stats, verbose) for m in active_list]
+            
+            # Wait for all downloads to complete
+            for _ in as_completed(futures):
+                pass
+        
+        ui.finish()
+        print()  # Newline after section
 
 
 def process_texture_packs(
@@ -347,7 +345,8 @@ def process_texture_packs(
     args_yes: bool,
     threads: int,
     base_dir: Path,
-    global_stats: DownloadStats
+    global_stats: DownloadStats,
+    verbose: bool = False
 ) -> Optional[Path]:
     """Process texture packs download and return destination path if copied."""
     tp_list = config.get("texture_packs", [])
@@ -366,10 +365,15 @@ def process_texture_packs(
     print_section_header("🎨 TEXTURE PACKS")
 
     # Use global stats
+    ui.set_total(len(tp_list))
+    ui.set_status("Downloading Texture Packs...")
+    
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, global_stats) for tp in tp_list]
+        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, global_stats, verbose) for tp in tp_list]
         for _ in as_completed(futures):
             pass
+
+    ui.finish()
 
     if args_yes or input(f"\n{BColors.BOLD}{get_string('copy_texture_packs_prompt')}{BColors.ENDC}").lower().strip().startswith(('y', 's')):
         dest_tps = get_destination_path("resourcepacks_folder", False, args_yes, config)
@@ -424,14 +428,14 @@ def copy_mods_to_destination(config: Dict[str, Any], args_yes: bool, base_dir: P
         print(f"{BColors.WARNING}No mods found to copy.{BColors.ENDC}")
 
 
-def process_modrinth_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
+def process_modrinth_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats, verbose: bool = False):
     """Wrapper for Modrinth downloads (uses unified _process_mod_wrapper)."""
-    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "modrinth")
+    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "modrinth", verbose)
 
 
-def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats):
+def process_curseforge_wrapper(client: APIClient, name: str, mc_version: str, project_type: str, output_dir: Path, installed_mods: Dict[str, Any], stats: DownloadStats, verbose: bool = False):
     """Wrapper for CurseForge downloads (uses unified _process_mod_wrapper)."""
-    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "curseforge")
+    _process_mod_wrapper(client, name, mc_version, project_type, output_dir, installed_mods, stats, "curseforge", verbose)
 
 def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_config: Dict[str, Any]) -> Optional[Path]:
     """
@@ -515,12 +519,13 @@ def get_destination_path(config_key: str, is_mod: bool, args_yes: bool, current_
                 Path("/usr/local/share/minecraft"),
             ]
             if not any(str(resolved).startswith(str(p)) for p in known_minecraft_paths):
-                logger.error("Path validation failed: path outside allowed directories")
-                print(f"{BColors.FAIL}Error: Invalid path. Use a path within your home directory.{BColors.ENDC}")
-                return None
+                logger.warning(f"Path validation warning: {resolved} is outside standard Minecraft directories")
+                print(f"{BColors.WARNING}Warning: Path is outside standard directories. Proceeding at your own risk.{BColors.ENDC}")
+                # Allow user to proceed with custom path
     except Exception as e:
         logger.error(f"Path validation failed: {e}")
-        return None
+        # Continue anyway if validation fails but path seems valid otherwise
+
 
     p = Path(final_path)
     if p.parent and not p.parent.exists():
@@ -537,6 +542,7 @@ def main():
     parser.add_argument("--lang", help="Language (en, it)")
     parser.add_argument("--yes", "-y", action="store_true", help="Auto-accept prompts")
     parser.add_argument("--threads", type=int, default=5, help="Parallel threads")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed logs (including skipped/up-to-date mods)")
     args = parser.parse_args()
 
     config = load_config()
@@ -575,10 +581,10 @@ def main():
             continue
 
         out_dir = base_dir / f"{subdir}_{mc_version}"
-        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads, all_stats, hardware)
+        process_mod_category(client, config_key, project_type, out_dir, title, config, mc_version, args.yes, args.threads, all_stats, hardware, args.verbose)
 
     # Process texture packs
-    process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir, all_stats)
+    process_texture_packs(client, config, mc_version, args.yes, args.threads, base_dir, all_stats, args.verbose)
 
     # Copy mods to destination
     copy_mods_to_destination(config, args.yes, base_dir, mc_version)

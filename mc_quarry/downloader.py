@@ -27,13 +27,18 @@ def download_file(url: str, dest_path: Path, max_retries: int = 4) -> bool:
     headers = {"User-Agent": "modpack-downloader/3.0"}
     for attempt in range(1, max_retries + 1):
         try:
+            tmp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
             with requests.get(url, headers=headers, stream=True, timeout=60) as r:
                 r.raise_for_status()
-                with dest_path.open("wb") as out:
+                with tmp_path.open("wb") as out:
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             out.write(chunk)
-                return True
+            
+            # Atomic swap
+            if tmp_path.exists():
+                tmp_path.replace(dest_path)
+            return True
         except requests.RequestException as e:
             logger.warning(f"Download attempt {attempt} failed for {url}: {e}")
             if attempt < max_retries:
@@ -65,9 +70,9 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
         try:
             with info_file.open('r') as f:
                 data = json.load(f)
-                if "project_id" in data:
-                    jar_path = directory / data.get("filename", "")
-                    if jar_path.exists():
+                if "project_id" in data and data.get("filename"):
+                    jar_path = directory / data["filename"]
+                    if jar_path.is_file():
                         installed[data["project_id"]] = data
                         if "project_slug" in data:
                             installed[data["project_slug"]] = data
@@ -89,10 +94,20 @@ def compare_versions(v1: str, v2: str) -> int:
         if ver1 < ver2: return -1
         return 0
     except Exception:
-        # Fallback to string comparison if parsing fails
-        if v1 > v2: return 1
-        if v1 < v2: return -1
-        return 0
+        # Fallback to integer tuple comparison if parsing fails
+        try:
+            def to_tuple(v):
+                return tuple(int(x) if x.isdigit() else x for x in v.replace('-', '.').split('.'))
+            
+            t1, t2 = to_tuple(v1), to_tuple(v2)
+            if t1 > t2: return 1
+            if t1 < t2: return -1
+            return 0
+        except Exception:
+            # Final fallback to string comparison
+            if v1 > v2: return 1
+            if v1 < v2: return -1
+            return 0
 
 def check_incompatibility(mod_name: str, mc_version: str, config: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     incompatible_rules = config.get("incompatible_mods", {})
@@ -171,7 +186,8 @@ def filter_mods(mod_list: List[str], mc_version: str, config: Dict[str, Any], ha
 
 def execute_download(display_name: str, project_id: str, project_slug: str, version_id: str, version_name: str,
                      filename: str, url: str, provider: str, output_dir: Path,
-                     installed_mods: Dict[str, Any], stats: DownloadStats, log_func: Callable[[str], None], project_url: str = ""):
+                     installed_mods: Dict[str, Any], stats: DownloadStats, log_func: Callable[[str], None], 
+                     project_url: str = "", verbose: bool = False):
     """
     Execute download logic for a single mod/resource pack.
 
@@ -200,8 +216,9 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
     if installed_data:
         if str(installed_data.get("version_id")) == str(version_id) and installed_data.get("provider") == provider:
             # Already up-to-date
-            log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}✅ Up to date{BColors.ENDC}")
-            log_func(details)
+            if verbose:
+                log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}✅ Up to date{BColors.ENDC}")
+                log_func(details)
             stats.add_skipped_up_to_date()
             needs_download = False
         else:
