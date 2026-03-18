@@ -74,11 +74,19 @@ class APIClient:
     # --- Modrinth API ---
 
     def search_modrinth(self, name: str, project_type: str = 'mod', limit: int = 5) -> Optional[Dict[str, Any]]:
+        """Search for projects on Modrinth."""
         facets = [[f"project_type:{project_type}"]]
         if project_type == 'mod':
             facets.append(["categories:fabric"])
-        q = {"query": name, "index": "relevance", "limit": limit, "facets": json.dumps(facets)}
-        return self.get_json(f"{BASE_API}/v2/search", params=q)
+        
+        # Modrinth API expects facets as a JSON array string
+        params = {
+            "query": name,
+            "index": "relevance", 
+            "limit": limit,
+            "facets": json.dumps(facets)
+        }
+        return self.get_json(f"{BASE_API}/v2/search", params=params)
 
     def get_modrinth_project(self, slug: str) -> Optional[Dict[str, Any]]:
         return self.get_json(f"{BASE_API}/v2/project/{slug}")
@@ -93,19 +101,36 @@ class APIClient:
         
         # Check cache first
         if cache_key in self._version_cache:
+            logger.debug(f"Cache hit for {cache_key}")
             return self._version_cache[cache_key]
         
+        # Build query parameters
         params = {}
+        
+        # Only filter by version if not force_latest
         if not force_latest:
             params["game_versions"] = json.dumps([mc_version])
+        
         if loader:
             params["loaders"] = json.dumps([loader])
+        
+        logger.debug(f"Fetching versions for {project_id} with params: {params}")
+        
+        # Fetch versions
         versions = self.get_json(f"{BASE_API}/v2/project/{project_id}/version", params=params)
         
-        # Cache result
-        result = versions[0] if isinstance(versions, list) and len(versions) > 0 else None
-        self._version_cache[cache_key] = result
+        if not versions or not isinstance(versions, list):
+            logger.warning(f"No versions returned for {project_id}")
+            self._version_cache[cache_key] = None
+            return None
         
+        # Return first version (API returns versions sorted by date)
+        result = versions[0] if len(versions) > 0 else None
+        
+        if result:
+            logger.debug(f"Found version: {result.get('version_number', 'unknown')}")
+        
+        self._version_cache[cache_key] = result
         return result
 
     def pick_file_from_version(self, version_json: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -171,7 +196,15 @@ class APIClient:
             for f in files:
                 if mc_version in f.get('gameVersions', []):
                     if mod_loader_type != 0:
-                        if any(v.lower() == 'fabric' for v in f.get('gameVersions', [])) or mod_loader_type == 4:
+                        # Map CF loader type to string identifiers
+                        # 4 = Fabric, 1 = Forge, 6 = NeoForge, 5 = Quilt
+                        target_loaders = []
+                        if mod_loader_type == 4: target_loaders = ['fabric', 'quilt']
+                        elif mod_loader_type == 1: target_loaders = ['forge']
+                        elif mod_loader_type == 6: target_loaders = ['neoforge']
+                        elif mod_loader_type == 5: target_loaders = ['quilt']
+                        
+                        if any(v.lower() in target_loaders for v in f.get('gameVersions', [])):
                              valid_files.append(f)
                     else:
                         valid_files.append(f)

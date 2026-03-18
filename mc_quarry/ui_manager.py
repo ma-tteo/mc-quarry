@@ -2,6 +2,8 @@ import sys
 import os
 import locale
 import logging
+import threading
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 from .utils import BColors, BOX_WIDTH, get_visual_length
@@ -99,7 +101,7 @@ translations: Dict[str, Dict[str, str]] = {
     },
     'error_processing': {
         'en': "❌ An error occurred while processing {}: {}",
-        'it': "❌ Si è verificato un errore durante l\'elaborazione di {}: {}"
+        'it': "❌ Si è verificato un errore durante l'elaborazione di {}: {}"
     },
     'mods_operation_complete': {
         'en': "📦 Mods operation complete!",
@@ -119,7 +121,7 @@ translations: Dict[str, Dict[str, str]] = {
     },
     'enter_instance_name': {
         'en': "➡️  Enter the launcher instance name: ",
-        'it': "➡️  Inserisci il nome dell\'istanza del launcher: "
+        'it': "➡️  Inserisci il nome dell'istanza del launcher: "
     },
     'destination_not_exist': {
         'en': "❌ The destination folder '{}' does not exist. Please create it and try again.",
@@ -258,6 +260,108 @@ translations: Dict[str, Dict[str, str]] = {
         'it': "💻 Hardware Rilevato: GPU={}, Core CPU={}",
     },
 }
+
+class TerminalUI:
+    """
+    Manages terminal output with a persistent progress bar at the bottom
+    and scrolling logs above. Thread-safe.
+    """
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.total_tasks = 0
+        self.completed_tasks = 0
+        self.current_status = "Initializing..."
+        self.start_time = time.time()
+        self._bar_length = 40
+        self._spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        self._spinner_idx = 0
+        self._last_update = 0
+
+    def set_total(self, total: int):
+        with self._lock:
+            self.total_tasks = total
+            self.completed_tasks = 0
+            self.start_time = time.time()
+
+    def update_progress(self, increment: int = 1):
+        with self._lock:
+            self.completed_tasks += increment
+            self._redraw_progress_bar()
+
+    def set_status(self, message: str):
+        with self._lock:
+            self.current_status = message
+            self._redraw_progress_bar()
+
+    def log(self, message: str):
+        """Print a log message above the progress bar."""
+        with self._lock:
+            # Clear progress bar line
+            sys.stdout.write('\r\033[K') 
+            # Print message
+            sys.stdout.write(f"{message}\n")
+            # Redraw progress bar
+            self._redraw_progress_bar()
+
+    def _redraw_progress_bar(self):
+        """Redraw the progress bar at the current cursor position (bottom)."""
+        if self.total_tasks == 0:
+            return
+
+        now = time.time()
+        # Limit update rate to 10fps to prevent flickering
+        if now - self._last_update < 0.1 and self.completed_tasks < self.total_tasks:
+            return
+        self._last_update = now
+
+        percentage = self.completed_tasks / self.total_tasks
+        filled_length = int(self._bar_length * percentage)
+        
+        # Color gradient based on percentage
+        color = BColors.FAIL
+        if percentage > 0.33: color = BColors.WARNING
+        if percentage > 0.66: color = BColors.OKCYAN
+        if percentage >= 1.0: color = BColors.OKGREEN
+
+        bar = '█' * filled_length + '░' * (self._bar_length - filled_length)
+        
+        spinner = self._spinner[self._spinner_idx]
+        self._spinner_idx = (self._spinner_idx + 1) % len(self._spinner)
+        
+        # Format: [Spinner] [Bar] N/Total (Pct%) Status
+        status_line = (
+            f"\r{BColors.OKBLUE}{spinner}{BColors.ENDC} "
+            f"{color}{bar}{BColors.ENDC} "
+            f"{self.completed_tasks}/{self.total_tasks} "
+            f"({int(percentage * 100)}%) "
+            f"{BColors.DIM}{self.current_status[:40]}{BColors.ENDC}"
+        )
+        
+        # Pad with spaces to clear previous line content
+        term_width = 80
+        try:
+            term_width = os.get_terminal_size().columns
+        except OSError:
+            pass
+            
+        padding = max(0, term_width - len(get_string_no_ansi(status_line)))
+        sys.stdout.write(status_line + ' ' * padding)
+        sys.stdout.flush()
+
+    def finish(self):
+        """Clean up the progress bar line."""
+        with self._lock:
+            sys.stdout.write('\r\033[K')  # Clear line
+            sys.stdout.flush()
+
+# Helper to strip ANSI codes for length calculation
+def get_string_no_ansi(s: str) -> str:
+    import re
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', s)
+
+# Global UI instance
+ui = TerminalUI()
 
 selected_lang = 'en'
 
