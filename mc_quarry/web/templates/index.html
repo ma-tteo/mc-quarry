@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC Quarry - Web Interface</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
+            --cyan: #39d353;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-idle { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .status-running { background: var(--accent); color: white; }
+        .status-complete { background: var(--success); color: white; }
+        .status-error { background: var(--error); color: white; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item:hover {
+            border-color: var(--accent);
+        }
+        
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #409eff;
+        }
+        
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #da3633;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .progress-container {
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 24px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--cyan));
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .current-mod {
+            background: var(--bg-tertiary);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .log-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-info { color: var(--text-secondary); }
+        .log-success { color: var(--success); }
+        .log-warning { color: var(--warning); }
+        .log-error { color: var(--error); }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>
+                <span>🚀</span>
+                MC Quarry
+                <span class="status-badge status-idle" id="statusBadge">Idle</span>
+            </h1>
+            <div>
+                <button class="btn btn-primary" id="startBtn" onclick="startDownload()">
+                    ▶️ Start Download
+                </button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopDownload()" disabled>
+                    ⏹️ Stop
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h2 class="card-title">⚙️ Configuration</h2>
+                
+                <div class="form-group">
+                    <label>Minecraft Version</label>
+                    <input type="text" id="mcVersion" value="1.21.11" placeholder="e.g., 1.21.11">
+                </div>
+                
+                <div class="form-group">
+                    <label>Mod Categories</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catMods" checked>
+                            <span>Core Mods</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catLightQol" checked>
+                            <span>Light QoL</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catMediumQol">
+                            <span>Medium QoL</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catSurvival">
+                            <span>Survival QoL</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catTexture">
+                            <span>Texture Packs</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">📊 Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statInstalled" style="color: var(--success)">0</div>
+                        <div class="stat-label">Installed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statUpdated" style="color: var(--accent)">0</div>
+                        <div class="stat-label">Updated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statSkipped" style="color: var(--text-secondary)">0</div>
+                        <div class="stat-label">Skipped</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statFailed" style="color: var(--warning)">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statNotFound" style="color: var(--error)">0</div>
+                        <div class="stat-label">Not Found</div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progressText">0 / 0 mods</span>
+                        <span id="progressPct">0%</span>
+                    </div>
+                    <div class="current-mod" id="currentMod" style="display: none">
+                        📦 <span id="currentModName"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">📜 Live Log</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">Waiting to start download...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Connect to WebSocket
+        const socket = io();
+        
+        socket.on('connect', () => {
+            addLog('✅ Connected to server', 'success');
+            updateStatus('connected');
+        });
+        
+        socket.on('disconnect', () => {
+            addLog('❌ Disconnected from server', 'error');
+        });
+        
+        socket.on('log', (data) => {
+            addLog(data.message, data.level);
+        });
+        
+        socket.on('progress', (data) => {
+            updateProgress(data.current, data.total, data.percentage, data.current_mod);
+        });
+        
+        socket.on('stats', (data) => {
+            updateStats(data);
+        });
+        
+        function addLog(message, level = 'info') {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function updateProgress(current, total, percentage, modName) {
+            const fill = document.getElementById('progressFill');
+            const text = document.getElementById('progressText');
+            const pct = document.getElementById('progressPct');
+            const modEl = document.getElementById('currentMod');
+            const modNameEl = document.getElementById('currentModName');
+            
+            fill.style.width = `${percentage}%`;
+            fill.textContent = `${Math.round(percentage)}%`;
+            text.textContent = `${current} / ${total} mods`;
+            pct.textContent = `${Math.round(percentage)}%`;
+            
+            if (modName) {
+                modNameEl.textContent = modName;
+                modEl.style.display = 'block';
+            }
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('statInstalled').textContent = stats.installed || 0;
+            document.getElementById('statUpdated').textContent = stats.updated || 0;
+            document.getElementById('statSkipped').textContent = stats.skipped || 0;
+            document.getElementById('statFailed').textContent = stats.failed || 0;
+            document.getElementById('statNotFound').textContent = stats.not_found || 0;
+        }
+        
+        function updateStatus(status) {
+            const badge = document.getElementById('statusBadge');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            badge.className = `status-badge status-${status}`;
+            badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            if (status === 'running') {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        async function startDownload() {
+            const version = document.getElementById('mcVersion').value;
+            const categories = [];
+            
+            if (document.getElementById('catMods').checked) categories.push('mods');
+            if (document.getElementById('catLightQol').checked) categories.push('light_qol_mods');
+            if (document.getElementById('catMediumQol').checked) categories.push('medium_qol_mods');
+            if (document.getElementById('catSurvival').checked) categories.push('survival_qol_mods');
+            if (document.getElementById('catTexture').checked) categories.push('texture_packs');
+            
+            if (categories.length === 0) {
+                alert('Please select at least one category');
+                return;
+            }
+            
+            addLog('🚀 Starting download...', 'info');
+            
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({version, categories})
+                });
+                
+                const data = await response.json();
+                if (!data.success) {
+                    addLog(`❌ Error: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                addLog(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+        
+        async function stopDownload() {
+            addLog('⏹️ Stopping download...', 'warning');
+            
+            try {
+                await fetch('/api/stop', {method: 'POST'});
+            } catch (err) {
+                addLog(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+        
+        // Poll status every 2 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                updateStatus(data.status);
+            } catch (err) {
+                console.error('Status poll failed:', err);
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
