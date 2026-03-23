@@ -1,128 +1,127 @@
-# 📚 Guida alle Mod del Pacchetto
+# 📚 Modpack Guide
 
-Questo documento descrive tutte le mod presenti nel file `config.json`.
-Le mod sono divise per categoria come nel file di configurazione.
+This document describes all the mods included in the `config.json` file.
+Mods are divided by category as defined in the configuration.
 
 ---
 
-## 🚀 Ottimizzazione (Performance & FPS)
-*Mod che migliorano le prestazioni senza cambiare il gioco.*
+## 🚀 Optimization (Performance & FPS)
+*Mods that improve performance without changing the game mechanics.*
 
-*   **Sodium**: Motore di rendering che sostituisce quello vanilla. Aumenta drasticamente gli FPS.
-*   **Sodium Extra**: Aggiunge opzioni grafiche avanzate a Sodium (particelle, meteo, ecc.).
-*   **Reese's Sodium Options**: Ridisegna il menu delle impostazioni video di Sodium per renderlo più pulito.
-*   **Lithium**: Ottimizza la fisica di gioco, l'IA dei mob e il tick del server (riduce il lag TPS).
-*   **Indium**: Addon per Sodium che garantisce compatibilità con mod che usano rendering avanzato (es. BetterGrassify).
-*   **Krypton**: Ottimizza lo stack di rete di Minecraft (riduce il lag online e l'uso della banda).
-*   **FerriteCore**: Riduce drasticamente l'utilizzo della RAM.
-*   **ModernFix**: Corregge bug del motore di gioco, velocizza l'avvio e riduce l'uso di RAM.
-*   **ImmediatelyFast**: Ottimizza il rendering "immediato" (GUI, testi, mob) aumentando gli FPS.
-*   **Dynamic FPS**: Riduce gli FPS quando il gioco è in background (Alt-Tab) per non surriscaldare il PC.
-*   **More Culling**: Non renderizza le parti di blocchi nascoste che non vedi, risparmiando risorse.
-*   **Entity Culling**: Nasconde entità e tile entity che non sono visibili dalla telecamera (enorme risparmio FPS).
-*   **FastAnim**: Ottimizza il calcolo delle animazioni delle entità.
-*   **Spark**: Profiler delle prestazioni per diagnosticare cause di lag e picchi di CPU/RAM.
-*   **FastLoad**: Velocizza significativamente il caricamento dei mondi.
-*   **ForgetMeChunk**: Corregge un memory leak che causa cali di FPS nel caricamento chunk.
-*   **C2ME (Concurrent Chunk Management Engine)**: Genera i chunk usando tutti i core del processore.
-*   **BadOptimizations**: Micro-ottimizzazioni per la gestione della luce e rendering entità.
-*   **VMP (Very Many Players)**: Ottimizza il gioco in presenza di molti giocatori o entità.
-*   **Enhanced Block Entities**: Ottimizza chest, letti e altri blocchi speciali.
-*   **Memory Leak Fix**: Previene che la RAM si riempia all'infinito durante le sessioni lunghe.
-*   **Noisium**: Ottimizza l'algoritmo di generazione del terreno.
-*   **ThreadTweak**: Migliora la gestione dei thread della CPU.
-*   **ServerCore**: Ottimizzazioni tecniche per il lato server.
-*   **Exordium**: Ottimizza il rendering dell'interfaccia utente (GUI).
-*   **Ksyxis**: Velocizza il caricamento del mondo non caricando gli spawn chunk inutilmente.
-*   **Alternate Current**: Ottimizza il sistema della Redstone.
-*   **Smooth Boot**: Riduce i freeze durante il caricamento iniziale del gioco.
-*   **Cull Less Leaves**: Migliora le prestazioni delle foglie degli alberi.
-*   **Clumps**: Raggruppa le sfere di esperienza in un unico ammasso per ridurre il lag.
-*   **Get It Together, Drops!**: Raggruppa gli oggetti a terra per migliorare le prestazioni.
-*   **TT20**: Ottimizzazione tecnica del tracking dei tick di gioco.
-*   **LMD (Let Me Despawn)**: Migliora le performance despawnando i mob non necessari.
-*   **Video Tape**: Ottimizza il rendering di video e animazioni nel gioco.
-*   **Marlow's Crystal Optimizer**: Ottimizza il rendering e la logica degli End Crystal.
-*   **Hero's Anchor Optimizer**: Ottimizza il blocco Ancora della Rinascita.
+*   **Sodium**: A rendering engine that replaces the vanilla one. Drastically increases FPS.
+*   **Sodium Extra**: Adds advanced graphical options to Sodium (particles, weather, etc.).
+*   **Reese's Sodium Options**: Redesigns the Sodium video settings menu for a cleaner look.
+*   **Lithium**: Optimizes game physics, mob AI, and server ticks (reduces TPS lag).
+*   **Indium**: An addon for Sodium that ensures compatibility with mods using advanced rendering (e.g., BetterGrassify).
+*   **Krypton**: Optimizes Minecraft's network stack (reduces online lag and bandwidth usage).
+*   **FerriteCore**: Drastically reduces RAM usage.
+*   **ModernFix**: Fixes game engine bugs, speeds up startup, and reduces RAM usage.
+*   **ImmediatelyFast**: Optimizes "immediate" rendering (GUI, text, mobs) to increase FPS.
+*   **Dynamic FPS**: Reduces FPS when the game is in the background (Alt-Tab) to prevent overheating.
+*   **More Culling**: Stops rendering hidden parts of blocks you can't see, saving resources.
+*   **Entity Culling**: Hides entities and tile entities not visible to the camera (huge FPS savings).
+*   **FastAnim**: Optimizes entity animation calculations.
+*   **Spark**: A performance profiler to diagnose causes of lag and CPU/RAM spikes.
+*   **FastLoad**: Significantly speeds up world loading.
+*   **ForgetMeChunk**: Fixes a memory leak causing FPS drops during chunk loading.
+*   **C2ME (Concurrent Chunk Management Engine)**: Generates chunks using all processor cores.
+*   **BadOptimizations**: Micro-optimizations for light management and entity rendering.
+*   **VMP (Very Many Players)**: Optimizes the game when many players or entities are present.
+*   **Enhanced Block Entities**: Optimizes chests, beds, and other special blocks.
+*   **Memory Leak Fix**: Prevents RAM from filling up indefinitely during long sessions.
+*   **Noisium**: Optimizes the terrain generation algorithm.
+*   **ThreadTweak**: Improves CPU thread management.
+*   **ServerCore**: Technical optimizations for the server-side.
+*   **Exordium**: Optimizes user interface (GUI) rendering.
+*   **Ksyxis**: Speeds up world loading by not loading spawn chunks unnecessarily.
+*   **Alternate Current**: Optimizes the Redstone system.
+*   **Smooth Boot**: Reduces freezes during the initial game loading.
+*   **Cull Less Leaves**: Improves the performance of tree leaves.
+*   **Clumps**: Groups experience orbs into a single cluster to reduce lag.
+*   **Get It Together, Drops!**: Groups items on the ground to improve performance.
+*   **TT20**: Technical optimization of game tick tracking.
+*   **LMD (Let Me Despawn)**: Improves performance by despawning unnecessary mobs.
+*   **Video Tape**: Optimizes video and animation rendering in-game.
+*   **Marlow's Crystal Optimizer**: Optimizes End Crystal rendering and logic.
+*   **Hero's Anchor Optimizer**: Optimizes the Respawn Anchor block.
 
-## 🎨 Grafica & Estetica
-*Mod che rendono il gioco più bello.*
+## 🎨 Graphics & Aesthetics
+*Mods that make the game look better.*
 
-*   **Iris Shaders**: Permette di installare ed usare gli Shaders.
-*   **3D Skin Layers**: Rende lo strato esterno della skin in 3D reale.
-*   **Animatica**: Supporta texture animate (feature stile OptiFine).
-*   **BetterGrassify**: Permette l'erba connessa per un terreno più naturale.
-*   **Capes**: Permette di vedere i mantelli dei giocatori.
-*   **Chat Heads**: Mostra la testa del giocatore in chat.
-*   **Cubes Without Borders**: Corregge visivamente i bordi delle texture dei blocchi.
-*   **LambDynamicLights**: La torcia in mano illumina l'area mentre cammini.
-*   **Model Gap Fix**: Chiude i buchi nei modelli 3D di oggetti e mob.
-*   **Not Enough Animations**: Aggiunge animazioni in terza persona realistiche.
-*   **Puzzle / Optiboxes**: Supporto per skybox custom e altre feature grafiche avanzate.
-*   **OptiGUI**: Permette interfacce (GUI) personalizzate tramite Resource Pack.
-*   **Wakes**: Aggiunge scie d'acqua realistiche per le barche.
-*   **Drip Sounds**: Aggiunge suoni e particelle quando l'acqua gocciola.
-*   **Visuality / Particle Core**: Aggiunge particelle ambientali extra (lucciole, polvere).
-*   **First Person Model**: Permette di vedere il proprio corpo in prima persona.
+*   **Iris Shaders**: Allows the installation and use of Shaders.
+*   **3D Skin Layers**: Makes the outer layer of the skin actual 3D.
+*   **Animatica**: Supports animated textures (OptiFine-style feature).
+*   **BetterGrassify**: Enables connected grass for more natural terrain.
+*   **Capes**: Allows you to see player capes.
+*   **Chat Heads**: Shows the player's head in chat.
+*   **Cubes Without Borders**: Visually fixes block texture edges.
+*   **LambDynamicLights**: Handheld torches illuminate the area as you walk.
+*   **Model Gap Fix**: Closes gaps in 3D models of items and mobs.
+*   **Not Enough Animations**: Adds realistic third-person animations.
+*   **Puzzle / Optiboxes**: Support for custom skyboxes and other advanced graphical features.
+*   **OptiGUI**: Enables custom interfaces (GUI) via Resource Packs.
+*   **Wakes**: Adds realistic water wakes for boats.
+*   **Drip Sounds**: Adds sounds and particles when water drips.
+*   **Visuality / Particle Core**: Adds extra environmental particles (fireflies, dust).
+*   **First Person Model**: Allows you to see your own body in first-person view.
 
-## 🛠️ Utilità (Quality of Life) Base
-*Funzioni utili per l'interfaccia e il gameplay base.*
+## 🛠️ Utility (Quality of Life) Base
+*Useful features for the interface and basic gameplay.*
 
-*   **AppleSkin**: Informazioni su fame e saturazione nell'HUD.
-*   **Better Mount HUD**: Migliora la barra della vita della cavalcatura.
-*   **Gamma-Utils**: Permette il Fullbright (vedere al buio) premendo un tasto.
-*   **Inventory Profiles Next**: Ordina automaticamente inventari e casse.
-*   **Mod Menu**: Menu per gestire e configurare le mod installate.
-*   **More Chat History**: Aumenta la cronologia dei messaggi in chat.
-*   **Remove Reloading Screen**: Rimuove la schermata di caricamento quando si cambiano i pack.
-*   **YOSBR**: Protegge le impostazioni personalizzate dell'utente.
-*   **Zoomify**: Aggiunge uno zoom fluido (tasto C).
-*   **Controlify**: Supporto avanzato per i controller.
-*   **Chunky**: Pre-generazione dei chunk per esplorazioni senza lag.
-*   **Litematica**: Sistema di schematiche per costruzioni facilitate.
-*   **Litematica-printer**: Addon per piazzare automaticamente i blocchi delle schematiche.
-*   **Bobby**: Permette di vedere chunk oltre il limite del server salvandoli in locale.
-*   **FastQuit**: Permette di uscire dai mondi istantaneamente salvando in background.
-*   **Language Reload**: Ricarica le lingue del gioco molto velocemente.
-*   **No Chat Reports**: Protegge la privacy disabilitando le segnalazioni chat di Microsoft.
-*   **e4mc**: Permette di invitare amici nel proprio mondo LAN tramite internet senza configurare il router.
-*   **Don't Drop It!**: Impedisce di gettare accidentalmente oggetti importanti a terra.
-*   **Almanac**: Un'enciclopedia interattiva per consultare informazioni sulle mod.
-*   **Smooth Scrolling / Smooth Swapping / Smooth Gui**: Rendono le animazioni dell'interfaccia molto più fluide.
-*   **Shulker Box Tooltip**: Visualizza il contenuto delle Shulker Box passandoci sopra il mouse.
+*   **AppleSkin**: Food and saturation information in the HUD.
+*   **Better Mount HUD**: Improves the mount health bar.
+*   **Gamma-Utils**: Allows Fullbright (seeing in the dark) with a key press.
+*   **Inventory Profiles Next**: Automatically sorts inventories and chests.
+*   **Mod Menu**: A menu to manage and configure installed mods.
+*   **More Chat History**: Increases chat message history.
+*   **Remove Reloading Screen**: Removes the loading screen when switching packs.
+*   **YOSBR**: Protects custom user settings.
+*   **Zoomify**: Adds smooth zooming (C key).
+*   **Controlify**: Advanced controller support.
+*   **Chunky**: Pre-generates chunks for lag-free exploration.
+*   **Litematica**: A schematic system for easier building.
+*   **Litematica-printer**: Addon to automatically place schematic blocks.
+*   **Bobby**: Allows viewing chunks beyond the server limit by saving them locally.
+*   **FastQuit**: Allows exiting worlds instantly by saving in the background.
+*   **Language Reload**: Reloads game languages very quickly.
+*   **No Chat Reports**: Protects privacy by disabling Microsoft chat reporting.
+*   **e4mc**: Allows inviting friends to your LAN world over the internet without router configuration.
+*   **Don't Drop It!**: Prevents accidentally dropping important items on the ground.
+*   **Almanac**: An interactive encyclopedia for mod information.
+*   **Smooth Scrolling / Smooth Swapping / Smooth Gui**: Make interface animations much smoother.
+*   **Shulker Box Tooltip**: Displays Shulker Box contents when hovering with the mouse.
 
 ## 🌲 Survival QoL & Gameplay Mods
-*Modifiche specifiche per migliorare l'esperienza Survival.*
+*Specific modifications to enhance the Survival experience.*
 
-*   **Nature's Compass**: Bussola speciale per localizzare i biomi.
-*   **Explorer's Compass**: Bussola per trovare strutture (villaggi, piramidi, ecc.).
-*   **Waystones**: Aggiunge pietre del teletrasporto per spostamenti rapidi tra basi.
-*   **Traveler's Backpack**: Zaini funzionali che offrono inventario extra e utilità.
-*   **Comforts**: Saggi a pelo e amache per dormire senza cambiare il punto di spawn.
-*   **Terralith / Tectonic**: Migliorano drasticamente la generazione del mondo e dei biomi.
-*   **Nullscape**: Rivoluziona la dimensione dell'End rendendola più varia.
-*   **Farmers Delight Refabricated**: Espande il sistema di cucina e agricoltura.
-*   **Falling Tree**: Permette di abbattere interi alberi rompendo un solo blocco.
-*   **RightClick Harvest**: Raccolta e ripiantamento automatico dei raccolti col tasto destro.
-*   **Trade Cycling**: Permette di cambiare le offerte dei Villager facilmente.
-*   **RPG Difficulty**: Aumenta progressivamente la difficoltà del gioco.
-*   **Trinkets**: Aggiunge nuovi slot per accessori indossabili (anelli, collane).
-*   **Waystones**: Pietre miliari per il viaggio rapido.
-*   **Advancement Plaques / Better Advancements**: Migliorano l'interfaccia e i pop-up dei progressi.
-*   **Ambient Sounds / Presence Footsteps**: Suoni ambientali e dei passi immersivi.
-*   **Snow! Real Magic!**: Neve più realistica e accumulabile.
-*   **Soul Fired**: Il fuoco blu brucia blu anche sulle entità.
-*   **Sound Physics Remastered**: Aggiunge riverbero ed eco dinamico in base all'ambiente.
+*   **Nature's Compass**: A special compass to locate biomes.
+*   **Explorer's Compass**: A compass to find structures (villages, pyramids, etc.).
+*   **Waystones**: Adds teleportation stones for fast travel between bases.
+*   **Traveler's Backpack**: Functional backpacks that offer extra inventory and utility.
+*   **Comforts**: Sleeping bags and hammocks to sleep without changing the spawn point.
+*   **Terralith / Tectonic**: Drastically improve world generation and biomes.
+*   **Nullscape**: Overhauls the End dimension making it more diverse.
+*   **Farmers Delight Refabricated**: Expands the cooking and farming system.
+*   **Falling Tree**: Allows chopping down entire trees by breaking just one block.
+*   **RightClick Harvest**: Automatic harvesting and replanting of crops with a right-click.
+*   **Trade Cycling**: Allows easy cycling of Villager trades.
+*   **RPG Difficulty**: Progressively increases the game's difficulty.
+*   **Trinkets**: Adds new slots for wearable accessories (rings, necklaces).
+*   **Advancement Plaques / Better Advancements**: Improve the interface and progression pop-ups.
+*   **Ambient Sounds / Presence Footsteps**: Immersive environmental and footstep sounds.
+*   **Snow! Real Magic!**: More realistic and accumulable snow.
+*   **Soul Fired**: Blue fire burns blue even on entities.
+*   **Sound Physics Remastered**: Adds dynamic reverb and echo based on the environment.
 
-## ⚙️ Librerie Tecniche
-*Necessarie per far funzionare le altre mod.*
+## ⚙️ Technical Libraries
+*Required for other mods to function.*
 
 *   **Fabric API**, **Architectury API**, **Cloth Config API**, **JamLib**, **libIPN**, **malilib**, **YACL**, **OctoLib**, **Fabric Language Kotlin**, **Iceberg**, **Prism**, **Puzzles Lib**, **Union Lib**, **OOO Lib**, **MRU**, **Collective**, **Creative Core**, **Crystal Lib**, **Prometheus**, **Forge Config API Port**, **Fzzy Config**, **configurable**, **ukulib**, **WalksyLib**.
 
-## 🔧 Fix Vari
-*   **Crash Assistant**: Analizza e spiega le cause dei crash del gioco.
-*   **MixinTrace / MixinTrace Reloaded**: Fornisce log più dettagliati per il debug.
-*   **Shut Up GL Error**: Nasconde gli errori grafici OpenGL non critici.
-*   **Debugify**: Corregge centinaia di bug del gioco vanilla.
-*   **Packet Fixer**: Risolve problemi legati ai pacchetti di rete troppo grandi.
-*   **Neruina**: Previene crash causati da entità o blocchi corrotti (ticking entity).
+## 🔧 Miscellaneous Fixes
+*   **Crash Assistant**: Analyzes and explains the causes of game crashes.
+*   **MixinTrace / MixinTrace Reloaded**: Provides more detailed logs for debugging.
+*   **Shut Up GL Error**: Hides non-critical OpenGL graphical errors.
+*   **Debugify**: Fixes hundreds of vanilla game bugs.
+*   **Packet Fixer**: Resolves issues related to oversized network packets.
+*   **Neruina**: Prevents crashes caused by corrupt entities or blocks (ticking entity).

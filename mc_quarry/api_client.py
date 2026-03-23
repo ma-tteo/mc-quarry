@@ -179,10 +179,16 @@ class APIClient:
             hits = data['data']
             if hits:
                 name_low = name.lower()
+                # 1. Look for exact name match
                 for mod in hits:
                     if mod.get('name', '').lower() == name_low:
                         return mod
-                return hits[0]
+                
+                # 2. Fallback to first hit if it's a close match
+                first_hit = hits[0]
+                first_name = first_hit.get('name', '').lower()
+                if name_low in first_name or first_name in name_low:
+                    return first_hit
         return None
 
     def get_latest_file_cf(self, mod_id: int, mc_version: str, mod_loader_type: int = 4) -> Optional[Dict[str, Any]]:
