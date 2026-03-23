@@ -35,9 +35,9 @@ def download_file(url: str, dest_path: Path, max_retries: int = 4) -> bool:
                         if chunk:
                             out.write(chunk)
             
-            # Atomic swap
+            # Atomic swap (move handles cross-partition issues better than replace)
             if tmp_path.exists():
-                tmp_path.replace(dest_path)
+                shutil.move(str(tmp_path), str(dest_path))
             return True
         except requests.RequestException as e:
             logger.warning(f"Download attempt {attempt} failed for {url}: {e}")
@@ -94,17 +94,19 @@ def compare_versions(v1: str, v2: str) -> int:
         if ver1 < ver2: return -1
         return 0
     except Exception:
-        # Fallback to integer tuple comparison if parsing fails
+        # Fallback to integer tuple comparison if packaging.version fails
         try:
-            def to_tuple(v):
-                return tuple(int(x) if x.isdigit() else x for x in v.replace('-', '.').split('.'))
+            def to_numeric_tuple(v: str) -> Tuple:
+                # Extract digits and dots, then split and convert
+                clean_v = re.sub(r'[^0-9.]', '', v.split('-')[0].split('+')[0])
+                return tuple(int(x) for x in clean_v.split('.') if x.isdigit())
             
-            t1, t2 = to_tuple(v1), to_tuple(v2)
+            t1, t2 = to_numeric_tuple(v1), to_numeric_tuple(v2)
             if t1 > t2: return 1
             if t1 < t2: return -1
             return 0
         except Exception:
-            # Final fallback to string comparison
+            # Last resort string comparison
             if v1 > v2: return 1
             if v1 < v2: return -1
             return 0
@@ -224,8 +226,9 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
         else:
             # Update available - remove old version
             old_ver = installed_data.get('version_name', '?')
-            log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKCYAN}🔄 Update{BColors.ENDC} ({old_ver} → {version_name})")
-            log_func(details)
+            if verbose:
+                log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKCYAN}🔄 Update{BColors.ENDC} ({old_ver} → {version_name})")
+                log_func(details)
             stats.add_updated()
             old_path = output_dir / installed_data["filename"]
             if old_path.exists():
@@ -240,19 +243,22 @@ def execute_download(display_name: str, project_id: str, project_slug: str, vers
     # Case 2: File exists but no metadata - index it
     if needs_download:
         if dest_path.exists() and not installed_data:
-            log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Indexed{BColors.ENDC}")
-            log_func(details)
+            if verbose:
+                log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.WARNING}⚠️ Indexed{BColors.ENDC}")
+                log_func(details)
             write_mod_info(dest_path, project_id, project_slug, version_id, version_name, file_name, provider)
             stats.add_installed()
         else:
             # Case 3: Download new file
             if download_file(url, dest_path):
-                log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}📥 Downloaded{BColors.ENDC}")
-                log_func(details)
+                if verbose:
+                    log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.OKGREEN}📥 Downloaded{BColors.ENDC}")
+                    log_func(details)
                 write_mod_info(dest_path, project_id, project_slug, version_id, version_name, file_name, provider)
                 if not installed_data:
                     stats.add_installed()
             else:
+                # Always log failures, even if not verbose
                 log_func(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{display_name}{BColors.ENDC} — {BColors.FAIL}❌ Failed{BColors.ENDC}")
                 log_func(details)
                 stats.add_failed(display_name, f"Download failed from {provider}")

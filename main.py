@@ -341,9 +341,13 @@ def process_mod_category(
             else:
                 futures = [executor.submit(process_modrinth_wrapper, client, m, mc_version, project_type, out_dir, installed, global_stats, verbose) for m in active_list]
             
-            # Wait for all downloads to complete
-            for _ in as_completed(futures):
-                pass
+            # Wait for all downloads to complete and catch exceptions
+            for f in as_completed(futures):
+                try:
+                    f.result()
+                except Exception as e:
+                    logger.error(f"Thread execution error: {e}")
+                    ui.log(f"{BColors.FAIL}❌ Thread Error:{BColors.ENDC} {e}")
         
         ui.finish()
         print()  # Newline after section

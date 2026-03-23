@@ -49,7 +49,11 @@ class APIClient:
             try:
                 r = self.session.get(url, params=params, headers=current_headers, timeout=20)
                 if r.status_code == 200:
-                    return r.json()
+                    try:
+                        return r.json()
+                    except (json.JSONDecodeError, ValueError):
+                        logger.error(f"Malformed JSON response from {url}")
+                        return None
                 elif r.status_code == 404:
                     return None
                 elif r.status_code == 429:
