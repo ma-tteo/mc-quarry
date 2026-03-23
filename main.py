@@ -107,12 +107,19 @@ def _process_mod_wrapper(
                 if search_results and "hits" in search_results and search_results["hits"]:
                     hits = search_results["hits"]
                     name_low = clean_name.lower()
+                    
+                    # 1. Look for exact match (title or slug)
                     for h in hits:
                         if h.get("title", "").lower() == name_low or h.get("slug", "").lower() == name_low:
                             project = h
                             break
-                    if not project:
-                        project = hits[0]
+                    
+                    # 2. Fallback to first hit only if it's a very close match (title contains search term)
+                    if not project and hits:
+                        first_hit = hits[0]
+                        first_title = first_hit.get("title", "").lower()
+                        if name_low in first_title or first_title in name_low:
+                            project = first_hit
 
             if project:
                 title = project.get("title") or project.get("name")
@@ -144,14 +151,16 @@ def _process_mod_wrapper(
                         ui.update_progress()
                         return
                 else:
-                    ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
-                    stats.add_failed(title, "No compatible version found")
+                    # No compatible version found on Modrinth
+                    if verbose:
+                        ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{title}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC} (Modrinth)")
+                    stats.add_failed(title, "No compatible version found on Modrinth")
                     ui.update_progress()
                     return
             
             # Not found on Modrinth
-            # Only log if it's a hard failure (not if we might try CF later, though this block is final for Modrinth provider)
-            ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
+            if verbose:
+                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC} (Modrinth)")
             stats.add_not_found(clean_name)
             ui.update_progress()
             return
@@ -172,7 +181,8 @@ def _process_mod_wrapper(
             cf_project = client.search_curseforge(clean_name, class_id=cf_class_id)
 
             if not cf_project:
-                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC}")
+                if verbose:
+                    ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{clean_name}{BColors.ENDC} — {BColors.FAIL}❌ Not Found{BColors.ENDC} (CurseForge)")
                 stats.add_not_found(clean_name)
                 ui.update_progress()
                 return
@@ -181,7 +191,8 @@ def _process_mod_wrapper(
             cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
 
             if not cf_file:
-                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC}")
+                if verbose:
+                    ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC} (CurseForge)")
                 stats.add_failed(cf_project['name'], "No compatible version on CF")
                 ui.update_progress()
                 return

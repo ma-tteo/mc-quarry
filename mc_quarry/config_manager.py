@@ -1,4 +1,5 @@
 import json
+import sys
 import shutil
 import logging
 from pathlib import Path
@@ -48,18 +49,21 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
             final_config.update(user_config)
             return final_config
         except (json.JSONDecodeError, IOError) as e:
-            logger.warning(f"Config file {config_path} is corrupted. Error: {e}")
+            logger.error(f"CRITICAL: Config file {config_path} is corrupted. Error: {e}")
             try:
                 # Backup corrupted config before creating new one
-                shutil.copyfile(str(path), f"{config_path}.bak")
-                logger.info(f"Backup of corrupted config created at {config_path}.bak")
+                backup_path = f"{config_path}.bak"
+                shutil.copyfile(str(path), backup_path)
+                logger.info(f"Backup of corrupted config created at {backup_path}")
+                print(f"{BColors.FAIL}CRITICAL ERROR: {config_path} is corrupted.{BColors.ENDC}")
+                print(f"A backup has been created at {BColors.BOLD}{backup_path}{BColors.ENDC}")
+                print(f"Please fix the JSON error (e.g., missing comma) before running again.")
             except Exception as backup_err:
                 logger.error(f"Could not back up corrupted file: {backup_err}")
+            
+            sys.exit(1)
     else:
         logger.info(f"Config file {config_path} not found. Creating a new one.")
-
-    save_config(default_config, str(path))
-    return default_config
 
 def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
     """Save configuration to disk."""
