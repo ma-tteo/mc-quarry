@@ -46,6 +46,7 @@ from mc_quarry.api_client import APIClient, CF_MOD_CLASS_ID, CF_RESOURCE_PACK_CL
 from mc_quarry.downloader import (
     read_all_mod_info, filter_mods, execute_download
 )
+from scripts.check_duplicates import check_duplicates
 
 # Setup logging - file only, no console output (use --debug for verbose)
 logging.basicConfig(
@@ -591,6 +592,10 @@ def main():
 
     config = load_config()
     lang = select_language(args.lang, config)
+    
+    # Check for duplicates if not in batch mode
+    if not args.yes:
+        check_duplicates()
     
     # Show banner before asking for version
     print_banner()
