@@ -190,6 +190,10 @@ def _process_mod_wrapper(
             cf_loader = 4 if project_type == 'mod' else 0
             cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader)
 
+            if not cf_file and project_type == 'resourcepack':
+                # Fallback to latest version for resource packs
+                cf_file = client.get_latest_file_cf(cf_project['id'], mc_version, mod_loader_type=cf_loader, force_latest=True)
+
             if not cf_file:
                 if verbose:
                     ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.FAIL}❌ No compatible version{BColors.ENDC} (CurseForge)")
@@ -200,6 +204,13 @@ def _process_mod_wrapper(
             project_url = cf_project.get('links', {}).get('websiteUrl', 
                 f"https://www.curseforge.com/minecraft/{'mc-mods' if project_type=='mod' else 'texture-packs'}/{cf_project['slug']}")
             
+            if not cf_file.get('downloadUrl'):
+                ui.log(f"✨ {BColors.BOLD}{BColors.BRIGHT_WHITE}{cf_project['name']}{BColors.ENDC} — {BColors.WARNING}⚠️ API Download Disabled{BColors.ENDC}")
+                ui.log(f"   {BColors.DIM}Please download manually: {BColors.UNDERLINE}{project_url}{BColors.ENDC}")
+                stats.add_failed(cf_project['name'], "API download disabled by author")
+                ui.update_progress()
+                return
+
             execute_download(
                 clean_name, str(cf_project['id']), cf_project['slug'],
                 str(cf_file['id']), cf_file.get('displayName', str(cf_file['id'])),
@@ -365,7 +376,8 @@ def process_texture_packs(
 ) -> Optional[Path]:
     """Process texture packs download and return destination path if copied."""
     tp_list = config.get("texture_packs", [])
-    if not tp_list:
+    cf_tp_list = config.get("curseforge_texture_packs", [])
+    if not tp_list and not cf_tp_list:
         return None
 
     do_tp = args_yes
@@ -383,11 +395,19 @@ def process_texture_packs(
     installed_tps = read_all_mod_info(tp_dir)
 
     # Use global stats
-    ui.set_total(len(tp_list))
+    total_tps = len(tp_list) + len(cf_tp_list)
+    ui.set_total(total_tps)
     ui.set_status("Downloading Texture Packs...")
     
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, installed_tps, global_stats, verbose) for tp in tp_list]
+        futures = []
+        # Modrinth texture packs
+        for tp in tp_list:
+            futures.append(executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, installed_tps, global_stats, verbose))
+        
+        # CurseForge texture packs
+        for tp in cf_tp_list:
+            futures.append(executor.submit(process_curseforge_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, installed_tps, global_stats, verbose))
         
         # Catch exceptions in threads
         for f in as_completed(futures):

@@ -195,7 +195,7 @@ class APIClient:
                     return first_hit
         return None
 
-    def get_latest_file_cf(self, mod_id: int, mc_version: str, mod_loader_type: int = 4) -> Optional[Dict[str, Any]]:
+    def get_latest_file_cf(self, mod_id: int, mc_version: str, mod_loader_type: int = 4, force_latest: bool = False) -> Optional[Dict[str, Any]]:
         if not self.cf_api_key:
             return None
         url = f"{CF_API_BASE}/v1/mods/{mod_id}/files"
@@ -204,7 +204,7 @@ class APIClient:
             files = data['data']
             valid_files = []
             for f in files:
-                if mc_version in f.get('gameVersions', []):
+                if force_latest or mc_version in f.get('gameVersions', []):
                     if mod_loader_type != 0:
                         # Map CF loader type to string identifiers
                         # 4 = Fabric, 1 = Forge, 6 = NeoForge, 5 = Quilt
