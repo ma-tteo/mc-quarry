@@ -1,127 +1,89 @@
 # 📚 Modpack Guide
 
-This document describes all the mods included in the `config.json` file.
-Mods are divided by category as defined in the configuration.
+This document describes all the mods included in the `config.json` file, organized by their respective categories.
 
 ---
 
-## 🚀 Optimization (Performance & FPS)
-*Mods that improve performance without changing the game mechanics.*
+## 💎 CORE MODS
+*The essential foundation: APIs, performance engines, and critical technical fixes.*
 
-*   **Sodium**: A rendering engine that replaces the vanilla one. Drastically increases FPS.
-*   **Sodium Extra**: Adds advanced graphical options to Sodium (particles, weather, etc.).
-*   **Reese's Sodium Options**: Redesigns the Sodium video settings menu for a cleaner look.
-*   **Lithium**: Optimizes game physics, mob AI, and server ticks (reduces TPS lag).
-*   **Indium**: An addon for Sodium that ensures compatibility with mods using advanced rendering (e.g., BetterGrassify).
-*   **Krypton**: Optimizes Minecraft's network stack (reduces online lag and bandwidth usage).
-*   **FerriteCore**: Drastically reduces RAM usage.
-*   **ModernFix**: Fixes game engine bugs, speeds up startup, and reduces RAM usage.
-*   **ImmediatelyFast**: Optimizes "immediate" rendering (GUI, text, mobs) to increase FPS.
-*   **Dynamic FPS**: Reduces FPS when the game is in the background (Alt-Tab) to prevent overheating.
-*   **More Culling**: Stops rendering hidden parts of blocks you can't see, saving resources.
-*   **Entity Culling**: Hides entities and tile entities not visible to the camera (huge FPS savings).
-*   **FastAnim**: Optimizes entity animation calculations.
-*   **Spark**: A performance profiler to diagnose causes of lag and CPU/RAM spikes.
-*   **FastLoad**: Significantly speeds up world loading.
-*   **ForgetMeChunk**: Fixes a memory leak causing FPS drops during chunk loading.
-*   **C2ME (Concurrent Chunk Management Engine)**: Generates chunks using all processor cores.
-*   **BadOptimizations**: Micro-optimizations for light management and entity rendering.
-*   **VMP (Very Many Players)**: Optimizes the game when many players or entities are present.
-*   **Enhanced Block Entities**: Optimizes chests, beds, and other special blocks.
-*   **Memory Leak Fix**: Prevents RAM from filling up indefinitely during long sessions.
-*   **Noisium**: Optimizes the terrain generation algorithm.
-*   **ThreadTweak**: Improves CPU thread management.
-*   **ServerCore**: Technical optimizations for the server-side.
-*   **Exordium**: Optimizes user interface (GUI) rendering.
-*   **Ksyxis**: Speeds up world loading by not loading spawn chunks unnecessarily.
-*   **Alternate Current**: Optimizes the Redstone system.
-*   **Smooth Boot**: Reduces freezes during the initial game loading.
-*   **Cull Less Leaves**: Improves the performance of tree leaves.
-*   **Clumps**: Groups experience orbs into a single cluster to reduce lag.
-*   **Get It Together, Drops!**: Groups items on the ground to improve performance.
-*   **TT20**: Technical optimization of game tick tracking.
-*   **LMD (Let Me Despawn)**: Improves performance by despawning unnecessary mobs.
-*   **Video Tape**: Optimizes video and animation rendering in-game.
-*   **Marlow's Crystal Optimizer**: Optimizes End Crystal rendering and logic.
-*   **Hero's Anchor Optimizer**: Optimizes the Respawn Anchor block.
+### 🛠️ Libraries & APIs
+*   **Fabric API / Language Kotlin**: Essential hooks and language support for most mods.
+*   **Architectury / Cloth Config / YACL / Fzzy Config**: Configuration interfaces and cross-platform compatibility layers.
+*   **Forge Config API Port**: Allows Forge-style configs to work on Fabric.
+*   **JamLib / Lithostitched / Octo-Lib**: Specialized library mods for world-gen and internal logic.
 
-## 🎨 Graphics & Aesthetics
-*Mods that make the game look better.*
+### ⚡ Performance & Engines
+*   **Sodium**: Revolutionary rendering engine. The single most important mod for FPS.
+*   **Lithium / FerriteCore**: Optimizes physics, AI, and drastically reduces RAM usage.
+*   **ModernFix**: Fixes engine bugs, speeds up startup, and optimizes memory.
+*   **Indium**: Sodium addon for compatibility with advanced rendering (like connected grass).
+*   **Concurrent Chunk Management Engine (C2ME)**: Uses all CPU cores to generate chunks (no more world-load lag).
+*   **Starlight / Phosphor**: Rewrites the lighting engine for massive performance gains.
+*   **Noisium / NoisiumForked**: Optimizes the terrain generation noise algorithms.
+*   **ImmediatelyFast**: Speeds up rendering of text, GUIs, and entities.
 
-*   **Iris Shaders**: Allows the installation and use of Shaders.
-*   **3D Skin Layers**: Makes the outer layer of the skin actual 3D.
-*   **Animatica**: Supports animated textures (OptiFine-style feature).
-*   **BetterGrassify**: Enables connected grass for more natural terrain.
-*   **Capes**: Allows you to see player capes.
-*   **Chat Heads**: Shows the player's head in chat.
-*   **Cubes Without Borders**: Visually fixes block texture edges.
-*   **LambDynamicLights**: Handheld torches illuminate the area as you walk.
-*   **Model Gap Fix**: Closes gaps in 3D models of items and mobs.
-*   **Not Enough Animations**: Adds realistic third-person animations.
-*   **Puzzle / Optiboxes**: Support for custom skyboxes and other advanced graphical features.
-*   **OptiGUI**: Enables custom interfaces (GUI) via Resource Packs.
-*   **Wakes**: Adds realistic water wakes for boats.
-*   **Drip Sounds**: Adds sounds and particles when water drips.
-*   **Visuality / Particle Core**: Adds extra environmental particles (fireflies, dust).
-*   **First Person Model**: Allows you to see your own body in first-person view.
+### 🔧 Optimizations & Technical Fixes
+*   **ServerCore / Alternate Current**: Optimizes server-side ticks and the Redstone system.
+*   **Entity Culling / More Culling / Cull Leaves**: Skips rendering objects you can't see.
+*   **Nvidium**: (NVIDIA only) Uses modern GPU features for insane render distances.
+*   **ScalableLux / Exordium / Noxesium**: UI and lighting micro-optimizations.
+*   **Smooth Boot / FastLoad / FastQuit / LazyDFU**: Speeds up every stage of opening and closing the game.
+*   **ForgetMeChunk / ThreadTweak / Memory Leak Fix**: Deep system fixes for stability.
+*   **Packet Fixer / Debugify**: Fixes networking issues and hundreds of vanilla bugs.
+*   **Neruina**: Catches "ticking entity" errors to prevent world corruption.
+*   **MixinTrace**: Detailed crash reports for easier debugging.
 
-## 🛠️ Utility (Quality of Life) Base
-*Useful features for the interface and basic gameplay.*
+### ⚙️ System Tools
+*   **Mod Menu**: The interface to manage and configure all your mods.
+*   **Spark**: A professional-grade profiler to see exactly what is causing lag.
+*   **Sodium Extra / Reese's Sodium Options**: Adds missing OptiFine features and a better UI to Sodium.
+*   **Krypton / VMP**: Optimizes the network stack for smoother multiplayer.
+*   **No Chat Reports**: Disables Microsoft's chat reporting system for privacy.
 
-*   **AppleSkin**: Food and saturation information in the HUD.
-*   **Better Mount HUD**: Improves the mount health bar.
-*   **Gamma-Utils**: Allows Fullbright (seeing in the dark) with a key press.
-*   **Inventory Profiles Next**: Automatically sorts inventories and chests.
-*   **Mod Menu**: A menu to manage and configure installed mods.
-*   **More Chat History**: Increases chat message history.
-*   **Remove Reloading Screen**: Removes the loading screen when switching packs.
-*   **YOSBR**: Protects custom user settings.
-*   **Zoomify**: Adds smooth zooming (C key).
-*   **Controlify**: Advanced controller support.
-*   **Chunky**: Pre-generates chunks for lag-free exploration.
-*   **Litematica**: A schematic system for easier building.
-*   **Litematica-printer**: Addon to automatically place schematic blocks.
-*   **Bobby**: Allows viewing chunks beyond the server limit by saving them locally.
-*   **FastQuit**: Allows exiting worlds instantly by saving in the background.
-*   **Language Reload**: Reloads game languages very quickly.
-*   **No Chat Reports**: Protects privacy by disabling Microsoft chat reporting.
-*   **e4mc**: Allows inviting friends to your LAN world over the internet without router configuration.
-*   **Don't Drop It!**: Prevents accidentally dropping important items on the ground.
-*   **Almanac**: An interactive encyclopedia for mod information.
-*   **Smooth Scrolling / Smooth Swapping / Smooth Gui**: Make interface animations much smoother.
-*   **Shulker Box Tooltip**: Displays Shulker Box contents when hovering with the mouse.
+---
 
-## 🌲 Survival QoL & Gameplay Mods
-*Specific modifications to enhance the Survival experience.*
+## 🔥 CURSEFORGE MODS
+*Mods sourced specifically from CurseForge.*
+*   **Connectivity**: Fixes common server connection issues.
+*   **Cupboard / Dynamic-view**: Background utilities for world management.
 
-*   **Nature's Compass**: A special compass to locate biomes.
-*   **Explorer's Compass**: A compass to find structures (villages, pyramids, etc.).
-*   **Waystones**: Adds teleportation stones for fast travel between bases.
-*   **Traveler's Backpack**: Functional backpacks that offer extra inventory and utility.
-*   **Comforts**: Sleeping bags and hammocks to sleep without changing the spawn point.
-*   **Terralith / Tectonic**: Drastically improve world generation and biomes.
-*   **Nullscape**: Overhauls the End dimension making it more diverse.
-*   **Farmers Delight Refabricated**: Expands the cooking and farming system.
-*   **Falling Tree**: Allows chopping down entire trees by breaking just one block.
-*   **RightClick Harvest**: Automatic harvesting and replanting of crops with a right-click.
-*   **Trade Cycling**: Allows easy cycling of Villager trades.
-*   **RPG Difficulty**: Progressively increases the game's difficulty.
-*   **Trinkets**: Adds new slots for wearable accessories (rings, necklaces).
-*   **Advancement Plaques / Better Advancements**: Improve the interface and progression pop-ups.
-*   **Ambient Sounds / Presence Footsteps**: Immersive environmental and footstep sounds.
-*   **Snow! Real Magic!**: More realistic and accumulable snow.
-*   **Soul Fired**: Blue fire burns blue even on entities.
-*   **Sound Physics Remastered**: Adds dynamic reverb and echo based on the environment.
+---
 
-## ⚙️ Technical Libraries
-*Required for other mods to function.*
+## 💡 LIGHT QOL
+*Client-side improvements that don't change gameplay mechanics.*
 
-*   **Fabric API**, **Architectury API**, **Cloth Config API**, **JamLib**, **libIPN**, **malilib**, **YACL**, **OctoLib**, **Fabric Language Kotlin**, **Iceberg**, **Prism**, **Puzzles Lib**, **Union Lib**, **OOO Lib**, **MRU**, **Collective**, **Creative Core**, **Crystal Lib**, **Prometheus**, **Forge Config API Port**, **Fzzy Config**, **configurable**, **ukulib**, **WalksyLib**.
+*   **Interfaccia & HUD**: BetterF3, MiniHUD, Status Effect Bars, uku's Armor HUD, Ping View, Better Mount HUD.
+*   **Inventory**: Inventory Profiles Next, Mouse Tweaks, Mouse Wheelie, Shulker Box Tooltip.
+*   **Visuals**: 3D Skin Layers, Animatica, BetterGrassify, LambDynamicLights, Iris Shaders (for Shaders support), Capes, Chat Heads, Zoomify (C-key zoom).
+*   **Utilities**: Controlify (Controller support), Accurate Block Placement, FreeCam, Gamma-Utils (Fullbright), Your Options Shall Be Respected (YOSBR).
+*   **Building**: Litematica (Schematics) and Litematica-printer.
 
-## 🔧 Miscellaneous Fixes
-*   **Crash Assistant**: Analyzes and explains the causes of game crashes.
-*   **MixinTrace / MixinTrace Reloaded**: Provides more detailed logs for debugging.
-*   **Shut Up GL Error**: Hides non-critical OpenGL graphical errors.
-*   **Debugify**: Fixes hundreds of vanilla game bugs.
-*   **Packet Fixer**: Resolves issues related to oversized network packets.
-*   **Neruina**: Prevents crashes caused by corrupt entities or blocks (ticking entity).
+---
+
+## 🎭 MEDIUM QOL
+*Immersive mods that improve the atmosphere, audio, and visuals.*
+
+*   **Audio**: Ambient Sounds, Auditory, Drip Sounds, Immersive Thunder, Presence Footsteps, Sound Physics Remastered.
+*   **Atmosphere**: Continuity (Connected textures), Falling Leaves, Cave Dust, Visuality, Effective, Euphoria Patches.
+*   **UI & Maps**: Jade (What am I looking at?), Xaero's Minimap, Xaero's World Map, Advancement Plaques.
+*   **Animations**: Better Third Person, Wavey Capes, Not Enough Animations, Eating Animation.
+
+---
+
+## ⚔️ SURVIVAL QOL
+*Mods that enhance the survival experience with new mechanics and world generation.*
+
+*   **World Gen**: Terralith, Tectonic, Nullscape (Overhauls for Overworld and End).
+*   **Navigation**: Nature's Compass, Explorer's Compass, Waystones.
+*   **Storage**: Traveler's Backpack, Trinkets (Extra accessory slots).
+*   **Mechanics**: RightClick Harvest, Falling Tree (Chop whole trees), Universal Bone Meal, Trade Cycling (Villagers), Fast Minecart, Comforts (Sleeping bags).
+*   **Tools**: WorldEdit (Creative building), RPG Difficulty (Scaling difficulty), Prism, Prometheus.
+
+---
+
+## 🎨 TEXTURE PACKS
+*   **Fresh Animations / Fresh Moves**: Realistic mob and player animations.
+*   **Mandala's GUI**: Modern dark mode interface.
+*   **Dramatic Skys / New Glowing Ores**: Improved atmosphere and utility.
+*   **Chat Reporting Helper / Mod Menu Helper**: Quality of life for technical packs.
