@@ -379,14 +379,23 @@ def process_texture_packs(
     tp_dir.mkdir(parents=True, exist_ok=True)
     print_section_header("🎨 TEXTURE PACKS")
 
+    # Read installed texture packs info to avoid re-downloads
+    installed_tps = read_all_mod_info(tp_dir)
+
     # Use global stats
     ui.set_total(len(tp_list))
     ui.set_status("Downloading Texture Packs...")
     
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, {}, global_stats, verbose) for tp in tp_list]
-        for _ in as_completed(futures):
-            pass
+        futures = [executor.submit(process_modrinth_wrapper, client, tp, mc_version, 'resourcepack', tp_dir, installed_tps, global_stats, verbose) for tp in tp_list]
+        
+        # Catch exceptions in threads
+        for f in as_completed(futures):
+            try:
+                f.result()
+            except Exception as e:
+                logger.error(f"TP thread execution error: {e}")
+                ui.log(f"{BColors.FAIL}❌ TP Thread Error:{BColors.ENDC} {e}")
 
     ui.finish()
 
