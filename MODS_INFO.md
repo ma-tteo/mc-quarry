@@ -20,7 +20,6 @@ This document describes all the mods included in the `config.json` file, organiz
 *   **Indium**: Sodium addon for compatibility with advanced rendering (like connected grass).
 *   **Concurrent Chunk Management Engine (C2ME)**: Uses all CPU cores to generate chunks (no more world-load lag).
 *   **Starlight / Phosphor**: Rewrites the lighting engine for massive performance gains.
-*   **Noisium / NoisiumForked**: Optimizes the terrain generation noise algorithms.
 *   **ImmediatelyFast**: Speeds up rendering of text, GUIs, and entities.
 
 ### 🔧 Optimizations & Technical Fixes
@@ -53,32 +52,14 @@ This document describes all the mods included in the `config.json` file, organiz
 ## 💡 LIGHT QOL
 *Client-side improvements that don't change gameplay mechanics.*
 
-*   **Interfaccia & HUD**: BetterF3, MiniHUD, Status Effect Bars, uku's Armor HUD, Ping View, Better Mount HUD.
-*   **Inventory**: Inventory Profiles Next, Mouse Tweaks, Mouse Wheelie, Shulker Box Tooltip.
-*   **Visuals**: 3D Skin Layers, Animatica, BetterGrassify, LambDynamicLights, Iris Shaders (for Shaders support), Capes, Chat Heads, Zoomify (C-key zoom).
-*   **Utilities**: Controlify (Controller support), Accurate Block Placement, FreeCam, Gamma-Utils (Fullbright), Your Options Shall Be Respected (YOSBR).
+*   **Interfaccia & HUD**: BetterF3, AppleSkin, Status Effect Timer, uku's Armor HUD, Ping View, Held Item Info.
+*   **Inventory**: Inventory Profiles Next, Mouse Tweaks, Shulker Box Tooltip.
+*   **Visuals**: 3D Skin Layers, Animatica, BetterGrassify, LambDynamicLights, OptiGUI, Iris Shaders, Capes, Chat Heads, View Model, Zoomify (C-key zoom), Model Gap Fix, EMF / ETF.
+*   **UI & Experience**: Immersive UI, More Chat History, Remove Reloading Screen, Resourcify, Smooth Gui, Smooth Scrolling, Smooth Swapping.
+*   **Utilities & Tweaks**: Tweakeroo, Accurate Block Placement Reborn, custom-hitboxes, Don't Drop It!, FreeCam, Gamma-Utils (Fullbright), Your Options Shall Be Respected (YOSBR).
+*   **Combat & PvP**: Better Hitreg, Crosshair Addons Public, complete-shield-fixes, Marlow's Crystal Optimizer, Hero's Anchor Optimizer.
+*   **Maps**: Xaero's Minimap, Xaero's World Map.
 *   **Building**: Litematica (Schematics) and Litematica-printer.
-
----
-
-## 🎭 MEDIUM QOL
-*Immersive mods that improve the atmosphere, audio, and visuals.*
-
-*   **Audio**: Ambient Sounds, Auditory, Drip Sounds, Immersive Thunder, Presence Footsteps, Sound Physics Remastered.
-*   **Atmosphere**: Continuity (Connected textures), Falling Leaves, Cave Dust, Visuality, Effective, Euphoria Patches.
-*   **UI & Maps**: Jade (What am I looking at?), Xaero's Minimap, Xaero's World Map, Advancement Plaques.
-*   **Animations**: Better Third Person, Wavey Capes, Not Enough Animations, Eating Animation.
-
----
-
-## ⚔️ SURVIVAL QOL
-*Mods that enhance the survival experience with new mechanics and world generation.*
-
-*   **World Gen**: Terralith, Tectonic, Nullscape (Overhauls for Overworld and End).
-*   **Navigation**: Nature's Compass, Explorer's Compass, Waystones.
-*   **Storage**: Traveler's Backpack, Trinkets (Extra accessory slots).
-*   **Mechanics**: RightClick Harvest, Falling Tree (Chop whole trees), Universal Bone Meal, Trade Cycling (Villagers), Fast Minecart, Comforts (Sleeping bags).
-*   **Tools**: WorldEdit (Creative building), RPG Difficulty (Scaling difficulty), Prism, Prometheus.
 
 ---
 
