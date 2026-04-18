@@ -11,261 +11,335 @@ from .utils import BColors, BOX_WIDTH, get_visual_length
 logger = logging.getLogger("mc-quarry")
 
 translations: Dict[str, Dict[str, str]] = {
-    'script_title': {
-        'en': "🚀 Modrinth & CurseForge Modpack Downloader v6",
-        'it': "🚀 Downloader Modpack Modrinth & CurseForge v6",
+    "script_title": {
+        "en": "🚀 Modrinth & CurseForge Modpack Downloader v6",
+        "it": "🚀 Downloader Modpack Modrinth & CurseForge v6",
     },
-    'enter_mc_version': {
-        'en': "❓ Please enter the Minecraft version (e.g., 1.21.1): ",
-        'it': "❓ Inserisci la versione di Minecraft (es. 1.21.1): ",
+    "enter_mc_version": {
+        "en": "❓ Please enter the Minecraft version (e.g., 1.21.1): ",
+        "it": "❓ Inserisci la versione di Minecraft (es. 1.21.1): ",
     },
-    'invalid_version': {
-        'en': "❌ Invalid version. Exiting.",
-        'it': "❌ Versione non valida. Esco.",
+    "invalid_version": {
+        "en": "❌ Invalid version. Exiting.",
+        "it": "❌ Versione non valida. Esco.",
     },
-    'target_mc_version': {
-        'en': "🎯 Target MC version: {}",
-        'it': "🎯 Versione MC di destinazione: {}",
+    "target_mc_version": {
+        "en": "🎯 Target MC version: {}",
+        "it": "🎯 Versione MC di destinazione: {}",
     },
-    'mods_output_folder': {
-        'en': "📂 Mods output folder: {}",
-        'it': "📂 Cartella di output delle mod: {}",
+    "mods_output_folder": {
+        "en": "📂 Mods output folder: {}",
+        "it": "📂 Cartella di output delle mod: {}",
     },
-    'reading_installed_mods': {
-        'en': "📦 Reading installed mods...",
-        'it': "📦 Lettura delle mod installate...",
+    "reading_installed_mods": {
+        "en": "📦 Reading installed mods...",
+        "it": "📦 Lettura delle mod installate...",
     },
-    'found_valid_mods': {
-        'en': "Found {} mods with valid metadata.",
-        'it': "Trovate {} mod con metadati validi.",
+    "found_valid_mods": {
+        "en": "Found {} mods with valid metadata.",
+        "it": "Trovate {} mod con metadati validi.",
     },
-    'processing_mod': {
-        'en': "✨ Processing: {}",
-        'it': "✨ Elaborazione: {}",
+    "processing_mod": {
+        "en": "✨ Processing: {}",
+        "it": "✨ Elaborazione: {}",
     },
-    'project_not_found': {
-        'en': "  ❌ Project not found for '{}'. Skipping.",
-        'it': "  ❌ Progetto non trovato per '{}'. Salto.",
+    "project_not_found": {
+        "en": "  ❌ Project not found for '{}'. Skipping.",
+        "it": "  ❌ Progetto non trovato per '{}'. Salto.",
     },
-    'found_project': {
-        'en': "  Found project: {}",
-        'it': "  Trovato progetto: {}",
+    "found_project": {
+        "en": "  Found project: {}",
+        "it": "  Trovato progetto: {}",
     },
-    'no_compatible_version_mod': {
-        'en': "  ❌ No compatible version found for this mod. Skipping.",
-        'it': "  ❌ Nessuna versione compatibile trovata per questa mod. Salto.",
+    "no_compatible_version_mod": {
+        "en": "  ❌ No compatible version found for this mod. Skipping.",
+        "it": "  ❌ Nessuna versione compatibile trovata per questa mod. Salto.",
     },
-    'mod_up_to_date': {
-        'en': "  ✅ '{}' is already up to date (Version: {}). Skipping.",
-        'it': "  ✅ '{}' è già aggiornato (Versione: {}). Salto.",
+    "mod_up_to_date": {
+        "en": "  ✅ '{}' is already up to date (Version: {}). Skipping.",
+        "it": "  ✅ '{}' è già aggiornato (Versione: {}). Salto.",
     },
-    'update_available': {
-        'en': "  🔄 Update available for '{}'.",
-        'it': "  🔄 Aggiornamento disponibile per '{}'.",
+    "update_available": {
+        "en": "  🔄 Update available for '{}'.",
+        "it": "  🔄 Aggiornamento disponibile per '{}'.",
     },
-    'installed_vs_found': {
-        'en': "    Installed: {} -> Found: {}",
-        'it': "    Installata: {} -> Trovata: {}",
+    "installed_vs_found": {
+        "en": "    Installed: {} -> Found: {}",
+        "it": "    Installata: {} -> Trovata: {}",
     },
-    'removing_old_file': {
-        'en': "    🗑️ Removing old file: {}",
-        'it': "    🗑️ Rimozione del vecchio file: {}",
+    "removing_old_file": {
+        "en": "    🗑️ Removing old file: {}",
+        "it": "    🗑️ Rimozione del vecchio file: {}",
     },
-    'latest_version': {
-        'en': "  Version: {}",
-        'it': "  Versione: {}",
+    "latest_version": {
+        "en": "  Version: {}",
+        "it": "  Versione: {}",
     },
-    'no_downloadable_file': {
-        'en': "  ❌ No downloadable file found in this version. Skipping.",
-        'it': "  ❌ Nessun file scaricabile trovato in questa versione. Salto.",
+    "no_downloadable_file": {
+        "en": "  ❌ No downloadable file found in this version. Skipping.",
+        "it": "  ❌ Nessun file scaricabile trovato in questa versione. Salto.",
     },
-    'file_exists': {
-        'en': "  ⚠️ File '{}' already exists. Skipping.",
-        'it': "  ⚠️ Il file '{}' esiste già. Salto.",
+    "file_exists": {
+        "en": "  ⚠️ File '{}' already exists. Skipping.",
+        "it": "  ⚠️ Il file '{}' esiste già. Salto.",
     },
-    'missing_metadata': {
-        'en': "    💾 Missing metadata, creating it now.",
-        'it': "    💾 Metadati mancanti, li creo ora.",
+    "missing_metadata": {
+        "en": "    💾 Missing metadata, creating it now.",
+        "it": "    💾 Metadati mancanti, li creo ora.",
     },
-    'downloading_file': {
-        'en': "  📥 Downloading '{}'...",
-        'it': "  📥 Download di '{}'...",
+    "downloading_file": {
+        "en": "  📥 Downloading '{}'...",
+        "it": "  📥 Download di '{}'...",
     },
-    'download_complete': {
-        'en': "  ✅ Download complete.",
-        'it': "  ✅ Download completato."
+    "download_complete": {
+        "en": "  ✅ Download complete.",
+        "it": "  ✅ Download completato.",
     },
-    'download_failed': {
-        'en': "  ❌ Download failed.",
-        'it': "  ❌ Download fallito."
+    "download_failed": {"en": "  ❌ Download failed.", "it": "  ❌ Download fallito."},
+    "error_processing": {
+        "en": "❌ An error occurred while processing {}: {}",
+        "it": "❌ Si è verificato un errore durante l'elaborazione di {}: {}",
     },
-    'error_processing': {
-        'en': "❌ An error occurred while processing {}: {}",
-        'it': "❌ Si è verificato un errore durante l'elaborazione di {}: {}"
+    "mods_operation_complete": {
+        "en": "📦 Mods operation complete!",
+        "it": "📦 Operazione mod completata!",
     },
-    'mods_operation_complete': {
-        'en': "📦 Mods operation complete!",
-        'it': "📦 Operazione mod completata!"
+    "copy_mods_prompt": {
+        "en": "❓ Do you want to copy the .jar files to a Minecraft mods folder? (y/n): ",
+        "it": "❓ Vuoi copiare i file .jar in una cartella di mod di Minecraft? (s/n): ",
     },
-    'copy_mods_prompt': {
-        'en': "❓ Do you want to copy the .jar files to a Minecraft mods folder? (y/n): ",
-        'it': "❓ Vuoi copiare i file .jar in una cartella di mod di Minecraft? (s/n): "
+    "suggested_path": {
+        "en": "📂 Suggested path: {}",
+        "it": "📂 Percorso suggerito: {}",
     },
-    'suggested_path': {
-        'en': "📂 Suggested path: {}",
-        'it': "📂 Percorso suggerito: {}"
+    "enter_path_prompt": {
+        "en": "➡️  Enter the path (leave empty to use the suggested one): ",
+        "it": "➡️  Inserisci il percorso (lascia vuoto per usare quello suggerito): ",
     },
-    'enter_path_prompt': {
-        'en': "➡️  Enter the path (leave empty to use the suggested one): ",
-        'it': "➡️  Inserisci il percorso (lascia vuoto per usare quello suggerito): "
+    "enter_instance_name": {
+        "en": "➡️  Enter the launcher instance name: ",
+        "it": "➡️  Inserisci il nome dell'istanza del launcher: ",
     },
-    'enter_instance_name': {
-        'en': "➡️  Enter the launcher instance name: ",
-        'it': "➡️  Inserisci il nome dell'istanza del launcher: "
+    "destination_not_exist": {
+        "en": "❌ The destination folder '{}' does not exist. Please create it and try again.",
+        "it": "❌ La cartella di destinazione '{}' non esiste. Creala e riprova.",
     },
-    'destination_not_exist': {
-        'en': "❌ The destination folder '{}' does not exist. Please create it and try again.",
-        'it': "❌ La cartella di destinazione '{}' non esiste. Creala e riprova."
+    "delete_existing_files_prompt": {
+        "en": "🗑️ Do you want to delete existing files in the destination folder before copying? (y/n): ",
+        "it": "🗑️ Vuoi eliminare i file esistenti nella cartella di destinazione prima di copiare? (s/n): ",
     },
-    'delete_existing_files_prompt': {
-        'en': "🗑️ Do you want to delete existing files in the destination folder before copying? (y/n): ",
-        'it': "🗑️ Vuoi eliminare i file esistenti nella cartella di destinazione prima di copiare? (s/n): "
+    "copied_file": {"en": "  ✅ Copied: {}", "it": "  ✅ Copiato: {}"},
+    "deleted_file": {"en": "  🗑️ Deleted: {}", "it": "  🗑️ Eliminato: {}"},
+    "copying_files_to": {
+        "en": "📥 Copying files to: {}",
+        "it": "📥 Copia dei file in: {}",
     },
-    'copied_file': {
-        'en': "  ✅ Copied: {}",
-        'it': "  ✅ Copiato: {}"
+    "deleting_files_from": {
+        "en": "🗑️ Deleting files from: {}",
+        "it": "🗑️ Eliminazione dei file da: {}",
     },
-    'deleted_file': {
-        'en': "  🗑️ Deleted: {}",
-        'it': "  🗑️ Eliminato: {}"
+    "download_texture_packs_prompt": {
+        "en": "❓ Do you want to download texture packs as well? (y/n): ",
+        "it": "❓ Vuoi scaricare anche i texture pack? (s/n): ",
     },
-    'copying_files_to': {
-        'en': "📥 Copying files to: {}",
-        'it': "📥 Copia dei file in: {}"
+    "script_finished": {
+        "en": "🎉 Script finished. Have fun!",
+        "it": "🎉 Script terminato. Buon divertimento!",
     },
-    'deleting_files_from': {
-        'en': "🗑️ Deleting files from: {}",
-        'it': "🗑️ Eliminazione dei file da: {}"
+    "start_texture_pack_download": {
+        "en": "🎨 Starting texture pack download...",
+        "it": "🎨 Inizio download texture pack...",
     },
-    'download_texture_packs_prompt': {
-        'en': "❓ Do you want to download texture packs as well? (y/n): ",
-        'it': "❓ Vuoi scaricare anche i texture pack? (s/n): "
+    "texture_packs_output_folder": {
+        "en": "📂 Texture packs output folder: {}",
+        "it": "📂 Cartella di output dei texture pack: {}",
     },
-    'script_finished': {
-        'en': "🎉 Script finished. Have fun!",
-        'it': "🎉 Script terminato. Buon divertimento!"
+    "no_compatible_version_tp": {
+        "en": "  ⚠️ No compatible version found. Trying to download the latest one.",
+        "it": "  ⚠️ Nessuna versione compatibile trovata. Tento di scaricare la più recente.",
     },
-    'start_texture_pack_download': {
-        'en': "🎨 Starting texture pack download...",
-        'it': "🎨 Inizio download texture pack..."
+    "cannot_find_any_version": {
+        "en": "  ❌ Could not find any version. Skipping.",
+        "it": "  ❌ Impossibile trovare alcuna versione. Salto.",
     },
-    'texture_packs_output_folder': {
-        'en': "📂 Texture packs output folder: {}",
-        'it': "📂 Cartella di output dei texture pack: {}"
+    "texture_pack_download_complete": {
+        "en": "🎨 Texture pack download complete!",
+        "it": "🎨 Download dei texture pack completato!",
     },
-    'no_compatible_version_tp': {
-        'en': "  ⚠️ No compatible version found. Trying to download the latest one.",
-        'it': "  ⚠️ Nessuna versione compatibile trovata. Tento di scaricare la più recente."
+    "copy_texture_packs_prompt": {
+        "en": "❓ Do you want to copy the texture packs to a Minecraft folder? (y/n): ",
+        "it": "❓ Vuoi copiare i texture pack in una cartella di Minecraft? (s/n): ",
     },
-    'cannot_find_any_version': {
-        'en': "  ❌ Could not find any version. Skipping.",
-        'it': "  ❌ Impossibile trovare alcuna versione. Salto."
+    "lang_saved": {
+        "en": "🌍 Language preference saved.",
+        "it": "🌍 Preferenza lingua salvata.",
     },
-    'texture_pack_download_complete': {
-        'en': "🎨 Texture pack download complete!",
-        'it': "🎨 Download dei texture pack completato!"
+    "start_parallel": {
+        "en": "🚀 Starting parallel download with {} threads...",
+        "it": "🚀 Avvio download parallelo con {} thread...",
     },
-    'copy_texture_packs_prompt': {
-        'en': "❓ Do you want to copy the texture packs to a Minecraft folder? (y/n): ",
-        'it': "❓ Vuoi copiare i texture pack in una cartella di Minecraft? (s/n): "
+    "use_configured_path_mods": {
+        "en": "Use configured path for mods ({})? (Y/n): ",
+        "it": "Vuoi usare il percorso configurato per le mod ({})? (S/n): ",
     },
-    'lang_saved': {
-        'en': "🌍 Language preference saved.",
-        'it': "🌍 Preferenza lingua salvata."
+    "use_configured_path_tps": {
+        "en": "Use configured path for texture packs ({})? (Y/n): ",
+        "it": "Vuoi usare il percorso configurato per i texture pack ({})? (S/n): ",
     },
-    'start_parallel': {
-        'en': "🚀 Starting parallel download with {} threads...",
-        'it': "🚀 Avvio download parallelo con {} thread..."
+    "no_path_provided_mods": {
+        "en": "No destination path provided for mods. Copying mods skipped.",
+        "it": "Nessun percorso di destinazione fornito per le mod. Copia mod saltata.",
     },
-    'use_configured_path_mods': {
-        'en': "Use configured path for mods ({})? (Y/n): ",
-        'it': "Vuoi usare il percorso configurato per le mod ({})? (S/n): "
+    "no_path_provided_tps": {
+        "en": "No destination path provided for texture packs. Copying texture packs skipped.",
+        "it": "Nessun percorso di destinazione fornito per i texture pack. Copia texture pack saltata.",
     },
-    'use_configured_path_tps': {
-        'en': "Use configured path for texture packs ({})? (Y/n): ",
-        'it': "Vuoi usare il percorso configurato per i texture pack ({})? (S/n): "
+    "copying_mods_skipped": {"en": "Copying mods skipped.", "it": "Copia mod saltata."},
+    "copying_tps_skipped": {
+        "en": "Copying texture packs skipped.",
+        "it": "Copia texture pack saltata.",
     },
-    'no_path_provided_mods': {
-        'en': "No destination path provided for mods. Copying mods skipped.",
-        'it': "Nessun percorso di destinazione fornito per le mod. Copia mod saltata."
+    "no_light_qol_found": {
+        "en": "⚠️ No light QoL mods found in config.",
+        "it": "⚠️ Nessuna mod QoL leggera trovata nel config.",
     },
-    'no_path_provided_tps': {
-        'en': "No destination path provided for texture packs. Copying texture packs skipped.",
-        'it': "Nessun percorso di destinazione fornito per i texture pack. Copia texture pack saltata."
+    "starting_light_qol_download": {
+        "en": "ℹ️ Starting download of light QoL mods. To disable, set 'install_light_qol' to false in config.json",
+        "it": "ℹ️ Inizio download delle mod QoL leggere. Per disabilitare, imposta 'install_light_qol' a false in config.json",
     },
-    'copying_mods_skipped': {
-        'en': "Copying mods skipped.",
-        'it': "Copia mod saltata."
+    "config_not_found": {
+        "en": "⚠️ {} not found. Creating a new default config file.",
+        "it": "⚠️ {} non trovato. Creo un nuovo file di configurazione predefinito.",
     },
-    'copying_tps_skipped': {
-        'en': "Copying texture packs skipped.",
-        'it': "Copia texture pack saltata."
+    "config_corrupted": {
+        "en": "⚠️ {} is corrupted. Backing it up and creating a new default config.",
+        "it": "⚠️ {} è corrotto. Eseguo il backup e creo una nuova configurazione predefinita.",
     },
-    'install_survival_qol_prompt': {
-        'en': "❓ Do you want to install survival QoL mods? (y/n): ",
-        'it': "❓ Vuoi installare le qol mods per survival? (s/n): "
+    "backup_failed": {
+        "en": "Could not back up corrupted file: {}",
+        "it": "Impossibile eseguire il backup del file corrotto: {}",
     },
-    'no_survival_qol_found': {
-        'en': "⚠️ No survival QoL mods found in config.",
-        'it': "⚠️ Nessuna mod QoL survival trovata nel config."
+    "switching_to_cf": {
+        "en": "  ⚠️ Not found on Modrinth. Switching to CurseForge...",
+        "it": "  ⚠️ Non trovato su Modrinth. Passo a CurseForge...",
     },
-    'no_medium_qol_found': {
-        'en': "⚠️ No medium-light QoL mods found in config.",
-        'it': "⚠️ Nessuna mod QoL medio-leggera trovata nel config."
+    "cf_key_missing": {
+        "en": "  ❌ CurseForge API Key missing in config.json. Skipping CurseForge search.",
+        "it": "  ❌ Chiave API CurseForge mancante in config.json. Salto la ricerca su CurseForge.",
     },
-    'no_light_qol_found': {
-        'en': "⚠️ No light QoL mods found in config.",
-        'it': "⚠️ Nessuna mod QoL leggera trovata nel config."
+    "hardware_info": {
+        "en": "💻 Detected Hardware: GPU={}, CPU Cores={}",
+        "it": "💻 Hardware Rilevato: GPU={}, Core CPU={}",
     },
-    'install_medium_qol_prompt': {
-        'en': "❓ Do you want to install medium-light QoL mods (visual/audio)? (y/n): ",
-        'it': "❓ Vuoi installare le mod QoL medio-leggere (grafica/audio)? (s/n): "
+    "lang_selection_menu": {
+        "en": "1. English\n2. Italiano",
+        "it": "1. English\n2. Italiano",
     },
-    'starting_light_qol_download': {
-        'en': "ℹ️ Starting download of light QoL mods. To disable, set 'install_light_qol' to false in config.json",
-        'it': "ℹ️ Inizio download delle mod QoL leggere. Per disabilitare, imposta 'install_light_qol' a false in config.json"
+    "select_language_prompt": {
+        "en": "Select Language: ",
+        "it": "Seleziona Lingua: ",
     },
-    'config_not_found': {
-        'en': "⚠️ {} not found. Creating a new default config file.",
-        'it': "⚠️ {} non trovato. Creo un nuovo file di configurazione predefinito."
+    "invalid_version_format": {
+        "en": "Invalid version format. Use semantic versioning (e.g., 1.21.11)",
+        "it": "Formato versione non valido. Usa il versioning semantico (es. 1.21.11)",
     },
-    'config_corrupted': {
-        'en': "⚠️ {} is corrupted. Backing it up and creating a new default config.",
-        'it': "⚠️ {} è corrotto. Eseguo il backup e creo una nuova configurazione predefinita."
+    "skipped_mods_summary": {
+        "en": "⚠️  Skipped {} mod(s):",
+        "it": "⚠️  Saltate {} mod:",
     },
-    'backup_failed': {
-        'en': "Could not back up corrupted file: {}",
-        'it': "Impossibile eseguire il backup del file corrotto: {}"
+    "skipped_incompatible": {
+        "en": "Incompatible ({}): {}",
+        "it": "Incompatibili ({}): {}",
     },
-    'switching_to_cf': {
-        'en': "  ⚠️ Not found on Modrinth. Switching to CurseForge...",
-        'it': "  ⚠️ Non trovato su Modrinth. Passo a CurseForge..."
+    "skipped_hardware": {
+        "en": "Hardware ({}): {} ({})",
+        "it": "Hardware ({}): {} ({})",
     },
-    'cf_key_missing': {
-        'en': "  ❌ CurseForge API Key missing in config.json. Skipping CurseForge search.",
-        'it': "  ❌ Chiave API CurseForge mancante in config.json. Salto la ricerca su CurseForge."
+    "skipped_other": {
+        "en": "Other ({}): {}",
+        "it": "Altri ({}): {}",
     },
-    'hardware_info': {
-        'en': "💻 Detected Hardware: GPU={}, CPU Cores={}",
-        'it': "💻 Hardware Rilevato: GPU={}, Core CPU={}",
+    "warning_path_outside": {
+        "en": "Warning: Path is outside standard directories. Proceeding at your own risk.",
+        "it": "Attenzione: Il percorso è al di fuori delle directory standard. Procedi a tuo rischio.",
+    },
+    "no_mods_found_to_copy": {
+        "en": "No mods found to copy.",
+        "it": "Nessuna mod trovata da copiare.",
+    },
+    "config_backup_created": {
+        "en": "A backup has been created at {}",
+        "it": "Un backup è stato creato in {}",
+    },
+    "config_fix_json": {
+        "en": "Please fix the JSON error (e.g., missing comma) before running again.",
+        "it": "Correggi l'errore JSON (es. virgola mancante) prima di eseguire di nuovo.",
+    },
+    "duplicate_config_not_found": {
+        "en": "❌ config.json not found.",
+        "it": "❌ config.json non trovato.",
+    },
+    "duplicate_config_load_error": {
+        "en": "❌ Error loading config: {}",
+        "it": "❌ Errore nel caricamento del config: {}",
+    },
+    "duplicate_found_summary": {
+        "en": "\n⚠️ Found {} duplicate(s):\n",
+        "it": "\n⚠️ Trovati {} duplicati:\n",
+    },
+    "duplicate_mod_header": {
+        "en": "Mod: {}",
+        "it": "Mod: {}",
+    },
+    "duplicate_present_in": {
+        "en": "Present in:",
+        "it": "Presente in:",
+    },
+    "duplicate_list_entry": {
+        "en": "  {}. {}",
+        "it": "  {}. {}",
+    },
+    "duplicate_keep_all": {
+        "en": "  {}. Keep in all (don't remove)",
+        "it": "  {}. Mantieni in tutti (non rimuovere)",
+    },
+    "duplicate_choice_prompt": {
+        "en": "\nChoose which category to KEEP (1-{}) or press enter to skip: ",
+        "it": "\nScegli quale categoria MANTENERE (1-{}) o premi invio per saltare: ",
+    },
+    "duplicate_removed_from": {
+        "en": "  🗑️ Removed from {}",
+        "it": "  🗑️ Rimosso da {}",
+    },
+    "duplicate_skipped": {
+        "en": "  ⏩ Skipped.",
+        "it": "  ⏩ Saltato.",
+    },
+    "duplicate_invalid_choice": {
+        "en": "  ❌ Invalid choice.",
+        "it": "  ❌ Scelta non valida.",
+    },
+    "duplicate_config_updated": {
+        "en": "\n✅ config.json updated successfully.",
+        "it": "\n✅ config.json aggiornato con successo.",
+    },
+    "duplicate_no_changes": {
+        "en": "\nℹ️ No changes made.",
+        "it": "\nℹ️ Nessuna modifica apportata.",
+    },
+    "separator_line": {
+        "en": "═════════════════════════════════════════════════════════════",
+        "it": "═════════════════════════════════════════════════════════════",
     },
 }
+
 
 class TerminalUI:
     """
     Manages terminal output with a persistent progress bar at the bottom
     and scrolling logs above. Thread-safe.
     """
+
     def __init__(self):
         self._lock = threading.Lock()
         self.total_tasks = 0
@@ -273,7 +347,7 @@ class TerminalUI:
         self.current_status = "Initializing..."
         self.start_time = time.time()
         self._bar_length = 40
-        self._spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        self._spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
         self._spinner_idx = 0
         self._last_update = 0
 
@@ -297,7 +371,7 @@ class TerminalUI:
         """Print a log message above the progress bar."""
         with self._lock:
             # Clear progress bar line
-            sys.stdout.write('\r\033[K') 
+            sys.stdout.write("\r\033[K")
             # Print message
             sys.stdout.write(f"{message}\n")
             # Redraw progress bar
@@ -316,18 +390,21 @@ class TerminalUI:
 
         percentage = self.completed_tasks / self.total_tasks
         filled_length = int(self._bar_length * percentage)
-        
+
         # Color gradient based on percentage
         color = BColors.FAIL
-        if percentage > 0.33: color = BColors.WARNING
-        if percentage > 0.66: color = BColors.OKCYAN
-        if percentage >= 1.0: color = BColors.OKGREEN
+        if percentage > 0.33:
+            color = BColors.WARNING
+        if percentage > 0.66:
+            color = BColors.OKCYAN
+        if percentage >= 1.0:
+            color = BColors.OKGREEN
 
-        bar = '█' * filled_length + '░' * (self._bar_length - filled_length)
-        
+        bar = "█" * filled_length + "░" * (self._bar_length - filled_length)
+
         spinner = self._spinner[self._spinner_idx]
         self._spinner_idx = (self._spinner_idx + 1) % len(self._spinner)
-        
+
         # Format: [Spinner] [Bar] N/Total (Pct%) Status
         status_line = (
             f"\r{BColors.OKBLUE}{spinner}{BColors.ENDC} "
@@ -336,54 +413,63 @@ class TerminalUI:
             f"({int(percentage * 100)}%) "
             f"{BColors.DIM}{self.current_status[:40]}{BColors.ENDC}"
         )
-        
+
         # Pad with spaces to clear previous line content
         try:
             term_width = os.get_terminal_size().columns
             padding = max(0, term_width - len(get_string_no_ansi(status_line)))
-            sys.stdout.write(status_line + ' ' * padding)
+            sys.stdout.write(status_line + " " * padding)
         except (OSError, ValueError):
             # Fallback if terminal size cannot be determined
             sys.stdout.write(status_line)
-            
+
         sys.stdout.flush()
 
     def finish(self):
         """Clean up the progress bar line."""
         with self._lock:
-            sys.stdout.write('\r\033[K')  # Clear line
+            sys.stdout.write("\r\033[K")  # Clear line
             sys.stdout.flush()
+
 
 # Helper to strip ANSI codes for length calculation
 def get_string_no_ansi(s: str) -> str:
     import re
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', s)
+
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+    return ansi_escape.sub("", s)
+
 
 # Global UI instance
 ui = TerminalUI()
 
-selected_lang = 'en'
+selected_lang = "en"
+
 
 def detect_language() -> str:
     """Tentativo di rilevare la lingua di sistema."""
     try:
         sys_lang = locale.getlocale()[0]
-        return 'it' if sys_lang and sys_lang.startswith('it') else 'en'
+        return "it" if sys_lang and sys_lang.startswith("it") else "en"
     except:
-        return 'en'
+        return "en"
+
 
 def set_selected_language(lang: str):
     global selected_lang
     selected_lang = lang
 
+
 def get_string(key: str, lang: Optional[str] = None, *args) -> str:
     """Recupera una stringa tradotta dal dizionario, con fallback all'inglese."""
     use_lang = lang if lang else selected_lang
-    s = translations.get(key, {}).get(use_lang, translations.get(key, {}).get('en', key))
+    s = translations.get(key, {}).get(
+        use_lang, translations.get(key, {}).get("en", key)
+    )
     if args:
         return s.format(*args)
     return s
+
 
 def print_banner():
     """Print ASCII art banner."""
@@ -396,16 +482,21 @@ def print_banner():
                                               /____/   
 {BColors.ENDC}"""
     print(banner)
+
+
 def print_section_header(title: str, icon: str = "", color: str = BColors.OKCYAN):
     """Print a section header with Unicode borders."""
     inner_width = BOX_WIDTH - 2
     content = f" {icon}  {title}" if icon else f" {title}"
     v_len = get_visual_length(content)
     padding = inner_width - v_len
-    if padding < 0: padding = 0
+    if padding < 0:
+        padding = 0
 
     print(f"\n{color}╔{'═' * inner_width}╗{BColors.ENDC}")
-    print(f"{color}║{BColors.ENDC}{BColors.BOLD}{content}{BColors.ENDC}{' ' * padding}{color}║{BColors.ENDC}")
+    print(
+        f"{color}║{BColors.ENDC}{BColors.BOLD}{content}{BColors.ENDC}{' ' * padding}{color}║{BColors.ENDC}"
+    )
     print(f"{color}╚{'═' * inner_width}╝{BColors.ENDC}")
 
 
@@ -415,7 +506,7 @@ def print_progress_bar(current: int, total: int, width: int = 30, label: str = "
         return
     ratio = current / total
     filled = int(width * ratio)
-    bar = '█' * filled + '░' * (width - filled)
+    bar = "█" * filled + "░" * (width - filled)
     pct = int(ratio * 100)
 
     if pct < 33:
@@ -428,75 +519,111 @@ def print_progress_bar(current: int, total: int, width: int = 30, label: str = "
     line = f"\r  {bar_color}{bar}{BColors.ENDC}  {BColors.BOLD}{current}{BColors.ENDC}/{total}  {BColors.DIM}[{pct}%]{BColors.ENDC}"
     if label:
         line += f"  {BColors.DIM}{label}{BColors.ENDC}"
-    sys.stdout.write(line + ' ' * 10)
+    sys.stdout.write(line + " " * 10)
     sys.stdout.flush()
     if current >= total:
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
         sys.stdout.flush()
+
 
 def detect_hardware() -> Dict[str, Any]:
     """
     Detect system hardware (GPU and CPU).
-    
+
     Returns:
         Dict with 'gpu' (nvidia/amd/intel/apple/generic) and 'cpu_cores'
     """
     import os
     import subprocess
+
     hardware = {"gpu": "generic", "cpu_cores": os.cpu_count() or 1}
 
     try:
         if sys.platform == "linux":
             # Try lspci first (most common on Linux)
             try:
-                output = subprocess.check_output(['lspci'], stderr=subprocess.STDOUT, timeout=10).decode('utf-8').lower()
-                if 'nvidia' in output:
+                output = (
+                    subprocess.check_output(
+                        ["lspci"], stderr=subprocess.STDOUT, timeout=10
+                    )
+                    .decode("utf-8")
+                    .lower()
+                )
+                if "nvidia" in output:
                     hardware["gpu"] = "nvidia"
-                elif 'amd' in output or 'ati' in output:
+                elif "amd" in output or "ati" in output:
                     hardware["gpu"] = "amd"
-                elif 'intel' in output:
+                elif "intel" in output:
                     hardware["gpu"] = "intel"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                subprocess.TimeoutExpired,
+            ) as e:
                 # Fallback: check /sys/class/drm (works on most Linux without lspci)
                 logger.debug(f"lspci failed, trying /sys/module fallback: {e}")
                 try:
-                    for driver in ['nvidia', 'radeon', 'amdgpu', 'i915']:
+                    for driver in ["nvidia", "radeon", "amdgpu", "i915"]:
                         if Path(f"/sys/module/{driver}").exists():
-                            hardware["gpu"] = "nvidia" if driver == "nvidia" else "amd" if driver in ['radeon', 'amdgpu'] else "intel"
+                            hardware["gpu"] = (
+                                "nvidia"
+                                if driver == "nvidia"
+                                else "amd"
+                                if driver in ["radeon", "amdgpu"]
+                                else "intel"
+                            )
                             break
                 except Exception as e:
                     logger.debug(f"Hardware detection via /sys/module failed: {e}")
         elif sys.platform == "win32":
             # Windows: use wmic
             try:
-                output = subprocess.check_output(
-                    ['wmic', 'path', 'win32_videocontroller', 'get', 'name'],
-                    stderr=subprocess.STDOUT, timeout=10
-                ).decode('utf-8', errors='ignore').lower()
-                if 'nvidia' in output:
+                output = (
+                    subprocess.check_output(
+                        ["wmic", "path", "win32_videocontroller", "get", "name"],
+                        stderr=subprocess.STDOUT,
+                        timeout=10,
+                    )
+                    .decode("utf-8", errors="ignore")
+                    .lower()
+                )
+                if "nvidia" in output:
                     hardware["gpu"] = "nvidia"
-                elif 'amd' in output or 'ati' in output or 'radeon' in output:
+                elif "amd" in output or "ati" in output or "radeon" in output:
                     hardware["gpu"] = "amd"
-                elif 'intel' in output:
+                elif "intel" in output:
                     hardware["gpu"] = "intel"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                subprocess.TimeoutExpired,
+            ) as e:
                 logger.debug(f"Windows GPU detection failed: {e}")
         elif sys.platform == "darwin":
             # macOS: use system_profiler
             try:
-                output = subprocess.check_output(
-                    ['system_profiler', 'SPDisplaysDataType'],
-                    stderr=subprocess.STDOUT, timeout=10
-                ).decode('utf-8', errors='ignore').lower()
-                if 'amd' in output or 'radeon' in output:
+                output = (
+                    subprocess.check_output(
+                        ["system_profiler", "SPDisplaysDataType"],
+                        stderr=subprocess.STDOUT,
+                        timeout=10,
+                    )
+                    .decode("utf-8", errors="ignore")
+                    .lower()
+                )
+                if "amd" in output or "radeon" in output:
                     hardware["gpu"] = "amd"
-                elif 'intel' in output:
+                elif "intel" in output:
                     hardware["gpu"] = "intel"
-                elif 'apple' in output:
+                elif "apple" in output:
                     hardware["gpu"] = "apple"  # Apple Silicon integrated
-                elif 'nvidia' in output:
+                elif "nvidia" in output:
                     hardware["gpu"] = "nvidia"
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                subprocess.TimeoutExpired,
+            ) as e:
                 logger.debug(f"macOS GPU detection failed: {e}")
     except Exception as e:
         # Log unexpected errors but keep generic fallback
@@ -508,7 +635,7 @@ def detect_hardware() -> Dict[str, Any]:
 def print_download_summary(stats: Any) -> None:
     """
     Print comprehensive download summary with statistics.
-    
+
     Shows: installed, updated, up-to-date, skipped, failed mods
     with a clean ASCII art header.
     """
@@ -518,28 +645,36 @@ def print_download_summary(stats: Any) -> None:
     def print_row(content, row_color=BColors.OKBLUE, indent=indent_val):
         v_len = get_visual_length(content)
         padding = inner_width - v_len - indent
-        print(f"{row_color}║{BColors.ENDC}{' ' * indent}{content}{' ' * max(0, padding)}{row_color}║{BColors.ENDC}")
+        print(
+            f"{row_color}║{BColors.ENDC}{' ' * indent}{content}{' ' * max(0, padding)}{row_color}║{BColors.ENDC}"
+        )
 
     # Calculate totals
     total_processed = stats.installed + stats.updated + stats.skipped_up_to_date
-    total_skipped = stats.skipped_incompatible + len(stats.not_found) + len([f for f in stats.failed])
+    total_skipped = (
+        stats.skipped_incompatible
+        + len(stats.not_found)
+        + len([f for f in stats.failed])
+    )
     total = total_processed + total_skipped
 
     print(f"\n{BColors.OKBLUE}╔{'═' * inner_width}╗{BColors.ENDC}")
-    
+
     # Title
     title = f" DOWNLOAD COMPLETE ({total} mods) "
     title_padding = (inner_width - len(title)) // 2
-    print(f"{BColors.OKBLUE}║{BColors.ENDC}{' ' * title_padding}{BColors.BOLD}{BColors.OKCYAN}{title}{BColors.ENDC}{' ' * (inner_width - title_padding - len(title))}{BColors.OKBLUE}║{BColors.ENDC}")
-    
+    print(
+        f"{BColors.OKBLUE}║{BColors.ENDC}{' ' * title_padding}{BColors.BOLD}{BColors.OKCYAN}{title}{BColors.ENDC}{' ' * (inner_width - title_padding - len(title))}{BColors.OKBLUE}║{BColors.ENDC}"
+    )
+
     print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
-    
+
     # ASCII ART Header
     content_header = [
-        fr"{BColors.HEADER}{BColors.BOLD} ___ ___ ___ ___ ___ ___  _  _   ___ _   _ __  __ __  __   _   _____   __ {BColors.ENDC}",
-        fr"{BColors.HEADER}{BColors.BOLD}/ __| __/ __/ __|_ _/ _ \| \| | / __| | | |  \/  |  \/  | /_\ | _ \ \ / / {BColors.ENDC}",
-        fr"{BColors.HEADER}{BColors.BOLD}\__ \ _|\__ \__ \| | (_) | .` | \__ \ |_| | |\/| | |\/| |/ _ \|   /\ V /  {BColors.ENDC}",
-        fr"{BColors.HEADER}{BColors.BOLD}|___/___|___/___/___\___/|_|\_| |___/\___/|_|  |_|_|  |_/_/ \_\_|_ \ |_|   {BColors.ENDC}"
+        rf"{BColors.HEADER}{BColors.BOLD} ___ ___ ___ ___ ___ ___  _  _   ___ _   _ __  __ __  __   _   _____   __ {BColors.ENDC}",
+        rf"{BColors.HEADER}{BColors.BOLD}/ __| __/ __/ __|_ _/ _ \| \| | / __| | | |  \/  |  \/  | /_\ | _ \ \ / / {BColors.ENDC}",
+        rf"{BColors.HEADER}{BColors.BOLD}\__ \ _|\__ \__ \| | (_) | .` | \__ \ |_| | |\/| | |\/| |/ _ \|   /\ V /  {BColors.ENDC}",
+        rf"{BColors.HEADER}{BColors.BOLD}|___/___|___/___/___\___/|_|\_| |___/\___/|_|  |_|_|  |_/_/ \_\_|_ \ |_|   {BColors.ENDC}",
     ]
     for line in content_header:
         print_row(line, indent=indent_val)
@@ -547,38 +682,49 @@ def print_download_summary(stats: Any) -> None:
     print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
 
     # Statistics
-    print_row(f"{BColors.OKGREEN}✅ Installed:     {BColors.BOLD}{stats.installed:>5}{BColors.ENDC}")
-    print_row(f"{BColors.OKCYAN}🔄 Updated:       {BColors.BOLD}{stats.updated:>5}{BColors.ENDC}")
-    print_row(f"{BColors.OKBLUE}💤 Up to date:    {BColors.BOLD}{stats.skipped_up_to_date:>5}{BColors.ENDC}")
-    print_row(f"{BColors.WARNING}⚠️  Skipped:       {BColors.BOLD}{stats.skipped_incompatible:>5}{BColors.ENDC}")
-    
+    print_row(
+        f"{BColors.OKGREEN}✅ Installed:     {BColors.BOLD}{stats.installed:>5}{BColors.ENDC}"
+    )
+    print_row(
+        f"{BColors.OKCYAN}🔄 Updated:       {BColors.BOLD}{stats.updated:>5}{BColors.ENDC}"
+    )
+    print_row(
+        f"{BColors.OKBLUE}💤 Up to date:    {BColors.BOLD}{stats.skipped_up_to_date:>5}{BColors.ENDC}"
+    )
+    print_row(
+        f"{BColors.WARNING}⚠️  Skipped:       {BColors.BOLD}{stats.skipped_incompatible:>5}{BColors.ENDC}"
+    )
+
     # Show errors if any
     if stats.not_found or stats.failed:
         print(f"{BColors.OKBLUE}╠{'═' * inner_width}╣{BColors.ENDC}")
-        
+
         # Not found
         if stats.not_found:
-            print_row(f"{BColors.FAIL}❌ Not Found:    {BColors.BOLD}{len(stats.not_found):>5}{BColors.ENDC}")
-        
+            print_row(
+                f"{BColors.FAIL}❌ Not Found:    {BColors.BOLD}{len(stats.not_found):>5}{BColors.ENDC}"
+            )
+            for name in stats.not_found:
+                safe_name = name[:40] + "..." if len(name) > 40 else name
+                print_row(
+                    f"{BColors.DIM}   • {safe_name}{BColors.ENDC}",
+                    indent=indent_val + 2,
+                )
+
         # Failed
         if stats.failed:
-            print_row(f"{BColors.FAIL}❌ Failed:        {BColors.BOLD}{len(stats.failed):>5}{BColors.ENDC}")
-        
-        # Show details (limit to first 10)
-        max_display = 10
-        details_shown = 0
-        
-        for name in stats.not_found[:max_display]:
-            safe_name = name[:40] + "..." if len(name) > 40 else name
-            print_row(f"{BColors.DIM}   • {safe_name}{BColors.ENDC}", indent=indent_val + 2)
-            details_shown += 1
-        
-        for name, reason in stats.failed[:max_display - details_shown]:
-            safe_name = f"{name[:30]} ({reason[:20]})" if len(name) > 30 else f"{name} ({reason})"
-            print_row(f"{BColors.DIM}   • {safe_name}{BColors.ENDC}", indent=indent_val + 2)
-        
-        if len(stats.not_found) + len(stats.failed) > max_display:
-            remaining = len(stats.not_found) + len(stats.failed) - max_display
-            print_row(f"{BColors.DIM}   ... and {remaining} more{BColors.ENDC}", indent=indent_val + 2)
+            print_row(
+                f"{BColors.FAIL}❌ Failed:        {BColors.BOLD}{len(stats.failed):>5}{BColors.ENDC}"
+            )
+            for name, reason in stats.failed:
+                safe_name = (
+                    f"{name[:30]} ({reason[:20]})"
+                    if len(name) > 30
+                    else f"{name} ({reason})"
+                )
+                print_row(
+                    f"{BColors.DIM}   • {safe_name}{BColors.ENDC}",
+                    indent=indent_val + 2,
+                )
 
     print(f"{BColors.OKBLUE}╚{'═' * inner_width}╝{BColors.ENDC}\n")

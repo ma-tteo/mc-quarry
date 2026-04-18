@@ -164,7 +164,7 @@ class APIAnalyzer:
         all_mods = []
         
         # Collect all mods from all categories
-        for key in ['mods', 'light_qol_mods', 'medium_qol_mods', 'survival_qol_mods', 'curseforge_mods']:
+        for key in ['mods', 'light_qol_mods', 'curseforge_mods']:
             if key in config:
                 for mod in config[key]:
                     if mod not in all_mods:
