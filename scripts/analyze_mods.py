@@ -94,8 +94,8 @@ class ModAnalyzer:
         mod_categories = {
             'mods': 'core',
             'light_qol_mods': 'light_qol',
-            'medium_qol_mods': 'medium_qol',
-            'survival_qol_mods': 'survival',
+
+
             'curseforge_mods': 'curseforge'
         }
         

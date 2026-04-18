@@ -39,11 +39,8 @@ class ConfigValidator:
         'mods': (list, True),
         'texture_packs': (list, True),
         'incompatible_mods': (dict, False),
-        'survival_qol_mods': (list, False),
         'install_light_qol': (bool, False),
         'light_qol_mods': (list, False),
-        'install_medium_qol': (bool, False),
-        'medium_qol_mods': (list, False),
     }
     
     # Optional fields
@@ -141,7 +138,7 @@ class ConfigValidator:
         """Validate mod list entries."""
         print(f"\n{BColors.BOLD}Validating mod lists...{BColors.ENDC}")
         
-        mod_fields = ['mods', 'light_qol_mods', 'medium_qol_mods', 'survival_qol_mods', 
+        mod_fields = ['mods', 'light_qol_mods', 
                       'curseforge_mods', 'texture_packs', 'curseforge_texture_packs']
         
         all_mods = set()
@@ -351,7 +348,7 @@ class ConfigValidator:
         all_mods = []
         
         # Collect all mod names
-        for field in ['mods', 'light_qol_mods', 'medium_qol_mods', 'survival_qol_mods']:
+        for field in ['mods', 'light_qol_mods',]:
             if field in self.config:
                 for mod in self.config[field]:
                     if not mod.startswith('http'):

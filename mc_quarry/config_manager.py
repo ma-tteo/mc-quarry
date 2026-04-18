@@ -5,11 +5,13 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 from .utils import BColors
+from .ui_manager import get_string
 
 CONFIG_FILE = "config.json"
 CLEAN_CONFIG_FILE = "config_clean.json"
 
 logger = logging.getLogger("mc-quarry")
+
 
 def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     """
@@ -18,7 +20,7 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     """
     path = Path(config_path)
     clean_path = Path(CLEAN_CONFIG_FILE)
-    
+
     # Restore config from clean copy if missing
     if not path.exists() and clean_path.exists():
         try:
@@ -34,42 +36,46 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
         "mods": [],
         "texture_packs": [],
         "incompatible_mods": {},
-        "survival_qol_mods": [],
         "install_light_qol": True,
         "light_qol_mods": [],
-        "install_medium_qol": False,
-        "medium_qol_mods": []
     }
 
     if path.exists():
         try:
-            with path.open('r') as f:
+            with path.open("r") as f:
                 user_config = json.load(f)
             final_config = default_config.copy()
             final_config.update(user_config)
             return final_config
         except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"CRITICAL: Config file {config_path} is corrupted. Error: {e}")
+            logger.error(
+                f"CRITICAL: Config file {config_path} is corrupted. Error: {e}"
+            )
             try:
                 # Backup corrupted config before creating new one
                 backup_path = f"{config_path}.bak"
                 shutil.copyfile(str(path), backup_path)
                 logger.info(f"Backup of corrupted config created at {backup_path}")
-                print(f"{BColors.FAIL}CRITICAL ERROR: {config_path} is corrupted.{BColors.ENDC}")
-                print(f"A backup has been created at {BColors.BOLD}{backup_path}{BColors.ENDC}")
-                print(f"Please fix the JSON error (e.g., missing comma) before running again.")
+                print(
+                    f"{BColors.FAIL}{get_string('config_corrupted', None, config_path)}{BColors.ENDC}"
+                )
+                print(
+                    f"{get_string('config_backup_created', None, BColors.BOLD + backup_path + BColors.ENDC)}"
+                )
+                print(f"{get_string('config_fix_json')}")
             except Exception as backup_err:
                 logger.error(f"Could not back up corrupted file: {backup_err}")
-            
+
             sys.exit(1)
     else:
         logger.info(f"Config file {config_path} not found. Creating a new one.")
+
 
 def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
     """Save configuration to disk."""
     path = Path(config_path)
     try:
-        with path.open('w') as f:
+        with path.open("w") as f:
             json.dump(data, f, indent=4)
     except IOError as e:
         logger.error(f"Could not save config to {config_path}: {e}")
