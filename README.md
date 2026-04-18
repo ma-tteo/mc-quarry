@@ -23,9 +23,10 @@
 | Feature | Description |
 |---------|-------------|
 | 🔄 **Automatic Sync** | Downloads the latest compatible version for your specific MC version. |
-| ⚡ **Parallel Engine** | Multi-threaded downloads drastically reduce wait times. |
+| ⚡ **Parallel Engine** | Multi-threaded thread-safe downloads drastically reduce wait times. |
 | 💻 **Hardware Aware** | Automatically skips mods like *Nvidium* (if not NVIDIA) or *C2ME* (if low CPU cores). |
 | 🛡️ **Config Safety** | Critical protection against corrupted JSON files; automatic backups created. |
+| 🔒 **Security First** | Protects against Path Traversal vulnerabilities during file copies. |
 | 🧹 **Duplicate Check** | Interactive startup check to remove the same mod from multiple categories. |
 | 📦 **Update Logic** | Intelligently removes old JARs and keeps metadata in `.modinfo` files. |
 | 📂 **Smart Folders** | Supports PrismLauncher, MultiMC, and Vanilla with `<INSTANCE_NAME>` detection. |
@@ -90,11 +91,13 @@ The configuration is now organized logically for better management:
 
 ## 🛠️ Utility Scripts
 
-Located in the `scripts/` folder:
+**Located in the `scripts/` folder:**
 - `check_duplicates.py`: Manual check for redundant mods.
-- `clean_config.py`: Generates a clean `config_clean.json` without private data.
 - `test_connection.py`: Validates API access to Modrinth/CurseForge.
 - `test_hardware.py`: Shows what the script "sees" regarding your GPU/CPU.
+
+**Located in the root folder:**
+- `clean_config.py`: Generates a clean `config_clean.json` without private data (API keys, local paths) for safe sharing.
 
 ---
 
