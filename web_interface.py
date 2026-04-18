@@ -151,11 +151,52 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
 
             # Download mod
             try:
-                if provider == "modrinth":
-                    # Search for mod
-                    search_result = client.search_modrinth(
-                        mod_name, project_type, limit=1
+                # Use main's wrapper to handle BOTH Modrinth and CurseForge flawlessly
+                from main import _process_mod_wrapper
+                from mc_quarry import ui_manager
+                
+                # We monkey-patch the UI logger temporarily to send output to the web interface
+                class WebUI:
+                    def log(self, msg):
+                        import re
+                        clean_msg = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', msg)
+                        emit_log(clean_msg, "info")
+                    def set_status(self, msg):
+                        pass
+                    def update_progress(self):
+                        pass
+                        
+                # Keep reference to old UI to not break things if running in same process long-term
+                old_ui = ui_manager.ui
+                ui_manager.ui = WebUI()
+                
+                try:
+                    _process_mod_wrapper(
+                        client,
+                        mod_name,
+                        mc_version,
+                        project_type,
+                        out_dir,
+                        installed,
+                        all_stats,
+                        provider,
+                        verbose=True
                     )
+                finally:
+                    ui_manager.ui = old_ui
+
+                processed += 1
+                emit_progress(processed, total_mods, mod_name)
+                emit_stats(
+                    {
+                        "installed": all_stats.installed,
+                        "updated": all_stats.updated,
+                        "skipped": all_stats.skipped_up_to_date,
+                        "failed": len(all_stats.failed),
+                        "not_found": len(all_stats.not_found),
+                    }
+                )
+
                     if (
                         not search_result
                         or "hits" not in search_result
@@ -204,39 +245,34 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
                         processed += 1
                         continue
 
-                    # Check if already installed
-                    installed_data = installed.get(project_id) or installed.get(
-                        project_slug
-                    )
-                    if (
-                        installed_data
-                        and installed_data.get("version_id") == version["id"]
-                    ):
-                        emit_log(f"✨ {title} — ✅ Up to date", "success")
-                        all_stats.skipped_up_to_date += 1
-                        processed += 1
-                        emit_progress(processed, total_mods, title)
-                        continue
+                    # Delegate download, update logic, and old JAR deletion to the robust execute_download function
+                    project_url = f"https://modrinth.com/{project_type}/{project_slug}"
 
-                    # Download
-                    emit_log(f"✨ {title} — 📥 Downloading...", "info")
-                    dest_path = out_dir / file_info["filename"]
+                    def web_logger(msg):
+                        import re
 
-                    if download_file(file_info["url"], dest_path):
-                        write_mod_info(
-                            dest_path,
-                            project_id,
-                            project_slug,
-                            version["id"],
-                            version["name"],
-                            file_info["filename"],
-                            "modrinth",
+                        # Clean ANSI codes before emitting to the web frontend
+                        clean_msg = re.sub(
+                            r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "", msg
                         )
-                        emit_log(f"✨ {title} — ✅ Downloaded", "success")
-                        all_stats.installed += 1
-                    else:
-                        emit_log(f"✨ {title} — ❌ Failed", "error")
-                        all_stats.failed.append((title, "Download failed"))
+                        emit_log(clean_msg, "info")
+
+                    execute_download(
+                        title,
+                        project_id,
+                        project_slug,
+                        version["id"],
+                        version["name"],
+                        file_info["filename"],
+                        file_info["url"],
+                        "modrinth",
+                        out_dir,
+                        installed,
+                        all_stats,
+                        web_logger,
+                        project_url,
+                        verbose=True,
+                    )
 
                     processed += 1
                     emit_progress(processed, total_mods, title)
