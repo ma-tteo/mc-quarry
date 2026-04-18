@@ -15,9 +15,13 @@ venv/
 build/
 dist/
 *.egg-info/
+.mypy_cache/
+.ruff_cache/
 
-# IDEs
+# OS/IDEs
 .DS_Store
+._*
+Thumbs.db
 .vscode/
 .idea/
 
