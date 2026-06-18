@@ -323,8 +323,12 @@
                     <label>Mod Categories</label>
                     <div class="checkbox-group">
                         <label class="checkbox-item">
-                            <input type="checkbox" id="catMods" checked>
+                            <input type="checkbox" id="catCoreMods" checked>
                             <span>Core Mods</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="catUtilityMods" checked>
+                            <span>Utility Mods</span>
                         </label>
                         <label class="checkbox-item">
                             <input type="checkbox" id="catLightQol" checked>
@@ -478,7 +482,8 @@
             const version = document.getElementById('mcVersion').value;
             const categories = [];
             
-            if (document.getElementById('catMods').checked) categories.push('mods');
+            if (document.getElementById('catCoreMods').checked) categories.push('core_mods');
+            if (document.getElementById('catUtilityMods').checked) categories.push('utility_mods');
             if (document.getElementById('catLightQol').checked) categories.push('light_qol_mods');
             if (document.getElementById('catTexture').checked) categories.push('texture_packs');
             

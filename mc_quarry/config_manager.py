@@ -1,11 +1,13 @@
+import contextlib
 import json
-import sys
-import shutil
 import logging
+import shutil
+import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
-from .utils import BColors
+from typing import Any, Dict
+
 from .ui_manager import get_string
+from .utils import BColors
 
 CONFIG_FILE = "config.json"
 CLEAN_CONFIG_FILE = "config_clean.json"
@@ -17,6 +19,12 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     """
     Load configuration from config.json.
     Restore from config_clean.json if missing.
+
+    Args:
+        config_path: Path to the config file (default: config.json)
+
+    Returns:
+        Configuration dictionary with defaults applied for missing keys
     """
     path = Path(config_path)
     clean_path = Path(CLEAN_CONFIG_FILE)
@@ -28,17 +36,28 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
             logger.info(f"Restored {CONFIG_FILE} from {CLEAN_CONFIG_FILE}")
         except Exception as e:
             logger.error(f"Failed to restore {CONFIG_FILE}: {e}")
+
     default_config = {
         "language": None,
         "curseforge_api_key": "",
         "mods_folder": "",
         "resourcepacks_folder": "",
-        "mods": [],
+        "core_mods": [],
+        "utility_mods": [],
         "texture_packs": [],
         "incompatible_mods": {},
         "install_light_qol": True,
         "light_qol_mods": [],
     }
+
+    # Load defaults from config_clean.json if it exists
+    if clean_path.exists():
+        try:
+            with clean_path.open("r") as f:
+                clean_config = json.load(f)
+            default_config.update(clean_config)
+        except Exception as e:
+            logger.error(f"Failed to load clean config defaults: {e}")
 
     if path.exists():
         try:
@@ -47,7 +66,7 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
             final_config = default_config.copy()
             final_config.update(user_config)
             return final_config
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(
                 f"CRITICAL: Config file {config_path} is corrupted. Error: {e}"
             )
@@ -72,10 +91,20 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
 
 
 def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
-    """Save configuration to disk."""
+    """Save configuration to disk.
+
+    Args:
+        data: Configuration dictionary to write
+        config_path: Path to the config file (default: config.json)
+    """
     path = Path(config_path)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
-        with path.open("w") as f:
+        with tmp_path.open("w") as f:
             json.dump(data, f, indent=4)
-    except IOError as e:
+        tmp_path.replace(path)
+    except OSError as e:
         logger.error(f"Could not save config to {config_path}: {e}")
+        if tmp_path.exists():
+            with contextlib.suppress(Exception):
+                tmp_path.unlink()

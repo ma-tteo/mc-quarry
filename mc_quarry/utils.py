@@ -1,10 +1,11 @@
 import re
-import unicodedata
 import threading
-from typing import List, Tuple, Optional, Any
+import unicodedata
+from typing import List, Tuple
 
 
 class BColors:
+    """ANSI escape codes for terminal text coloring and formatting."""
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
     OKCYAN = "\033[96m"
@@ -18,11 +19,9 @@ class BColors:
     ITALIC = "\033[3m"
     MAGENTA = "\033[35m"
     BRIGHT_WHITE = "\033[97m"
-    BRIGHT_CYAN = "\033[96m"
     BRIGHT_YELLOW = "\033[93m"
     BRIGHT_GREEN = "\033[92m"
     BRIGHT_RED = "\033[91m"
-    BRIGHT_BLUE = "\033[94m"
     BRIGHT_MAGENTA = "\033[95m"
     BG_GREEN = "\033[42m"
     BG_RED = "\033[41m"
@@ -85,7 +84,10 @@ def sanitize_filename(name: str) -> str:
 
 
 class DownloadStats:
+    """Thread-safe accumulator for download statistics."""
+
     def __init__(self):
+        """Initialize all counters to zero."""
         self.lock = threading.Lock()
         self.installed = 0
         self.updated = 0
@@ -95,25 +97,40 @@ class DownloadStats:
         self.not_found: List[str] = []
 
     def add_installed(self):
+        """Increment the installed counter."""
         with self.lock:
             self.installed += 1
 
     def add_updated(self):
+        """Increment the updated counter."""
         with self.lock:
             self.updated += 1
 
     def add_skipped_up_to_date(self):
+        """Increment the skipped-up-to-date counter."""
         with self.lock:
             self.skipped_up_to_date += 1
 
     def add_skipped_incompatible(self):
+        """Increment the skipped-incompatible counter."""
         with self.lock:
             self.skipped_incompatible += 1
 
     def add_failed(self, name: str, reason: str):
+        """Record a failed download.
+
+        Args:
+            name: Name of the mod that failed
+            reason: Failure reason string
+        """
         with self.lock:
             self.failed.append((name, reason))
 
     def add_not_found(self, name: str):
+        """Record a mod that was not found.
+
+        Args:
+            name: Name of the mod that was not found
+        """
         with self.lock:
             self.not_found.append(name)

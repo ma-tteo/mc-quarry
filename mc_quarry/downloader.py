@@ -1,15 +1,16 @@
-import os
-import time
 import json
 import logging
-import shutil
-import requests
 import re
+import shutil
+import time
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Callable, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import requests
 from packaging import version as pkg_version
-from .utils import BColors, sanitize_filename, DownloadStats
-from .ui_manager import get_string, detect_hardware
+
+from .ui_manager import detect_hardware
+from .utils import BColors, DownloadStats, sanitize_filename
 
 logger = logging.getLogger("mc-quarry")
 
@@ -58,7 +59,17 @@ def write_mod_info(
     filename: str,
     provider: str = "modrinth",
 ):
-    """Save .modinfo JSON metadata file."""
+    """Save .modinfo JSON metadata file.
+
+    Args:
+        jar_path: Path to the downloaded JAR/ZIP file
+        project_id: Unique project identifier
+        project_slug: Project slug name
+        version_id: Specific version identifier
+        version_name: Human-readable version name
+        filename: Original downloaded filename
+        provider: Source provider ('modrinth' or 'curseforge')
+    """
     info_path = jar_path.with_suffix(jar_path.suffix + ".modinfo")
     metadata = {
         "project_id": str(project_id),
@@ -71,12 +82,19 @@ def write_mod_info(
     try:
         with info_path.open("w") as f:
             json.dump(metadata, f, indent=4)
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Error writing .modinfo for {filename}: {e}")
 
 
 def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
-    """Read all .modinfo files from directory and build index."""
+    """Read all .modinfo files from directory and build index.
+
+    Args:
+        directory: Path to the mods directory to scan
+
+    Returns:
+        Dict mapping project_id and project_slug to their metadata
+    """
     installed = {}
     for info_file in directory.glob("*.modinfo"):
         try:
@@ -91,7 +109,7 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
                     else:
                         # Orphaned modinfo - jar file was deleted
                         info_file.unlink()
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Corrupted modinfo file {info_file}: {e}")
             info_file.unlink()
         except Exception as e:
@@ -100,7 +118,15 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
 
 
 def compare_versions(v1: str, v2: str) -> int:
-    """Return 1 if v1 > v2, -1 if v1 < v2, 0 if equal."""
+    """Compare two version strings.
+
+    Args:
+        v1: First version string
+        v2: Second version string
+
+    Returns:
+        1 if v1 > v2, -1 if v1 < v2, 0 if equal
+    """
     try:
         ver1, ver2 = pkg_version.parse(v1), pkg_version.parse(v2)
         if ver1 > ver2:
@@ -108,12 +134,13 @@ def compare_versions(v1: str, v2: str) -> int:
         if ver1 < ver2:
             return -1
         return 0
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Version parse fallback for {v1} / {v2}: {e}")
         # Fallback to integer tuple comparison if packaging.version fails
         try:
 
             def to_numeric_tuple(v: str) -> Tuple:
-                # Extract digits and dots, then split and convert
+                """Convert version string to numeric tuple for comparison."""
                 clean_v = re.sub(r"[^0-9.]", "", v.split("-")[0].split("+")[0])
                 return tuple(int(x) for x in clean_v.split(".") if x.isdigit())
 
@@ -123,7 +150,8 @@ def compare_versions(v1: str, v2: str) -> int:
             if t1 < t2:
                 return -1
             return 0
-        except Exception:
+        except Exception as e2:
+            logger.debug(f"Version numeric fallback for {v1} / {v2}: {e2}")
             # Last resort string comparison
             if v1 > v2:
                 return 1
@@ -135,12 +163,26 @@ def compare_versions(v1: str, v2: str) -> int:
 def check_incompatibility(
     mod_name: str, mc_version: str, config: Dict[str, Any]
 ) -> Tuple[bool, Optional[str]]:
+    """
+    Check if a mod is incompatible with the current Minecraft version.
+
+    Evaluates version-based incompatibility rules (<, >, +, exact match).
+
+    Args:
+        mod_name: Name of the mod to check
+        mc_version: Target Minecraft version
+        config: Configuration dict with 'incompatible_mods' rules
+
+    Returns:
+        Tuple of (is_incompatible, reason_message_or_None)
+    """
     incompatible_rules = config.get("incompatible_mods", {})
     for rule_mod, invalid_versions in incompatible_rules.items():
         if rule_mod.lower() == mod_name.lower():
             for ver_rule in invalid_versions:
                 if ver_rule.startswith("<"):
-                    if compare_versions(mc_version, ver_rule[1:]) < 0:
+                    # <1.20 means the mod only works below 1.20 — skip if mc_version >= threshold
+                    if compare_versions(mc_version, ver_rule[1:]) >= 0:
                         return (
                             True,
                             f"Skipping '{mod_name}' on {mc_version} (incompatible by rule: {ver_rule})",
@@ -223,8 +265,7 @@ def filter_mods(
         skip_mod = False
         mod_low = mod.lower()
         for primary_mod, opposites in conflict_rules.items():
-            if primary_mod.lower() in current_final_names:
-                if any(opt.lower() in mod_low for opt in opposites):
+            if primary_mod.lower() in current_final_names and any(opt.lower() in mod_low for opt in opposites):
                     skipped_reasons.append((mod, f"Conflicts with '{primary_mod}'"))
                     skip_mod = True
                     break

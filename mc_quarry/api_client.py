@@ -1,11 +1,11 @@
 import json
-import time
 import logging
 import random
 import threading
+import time
+from typing import Any, Dict, List, Optional, Union
+
 import requests
-from typing import Dict, Any, List, Optional, Union
-from .utils import BColors
 
 # Modrinth API base URL
 BASE_API = "https://api.modrinth.com"
@@ -24,7 +24,10 @@ logger = logging.getLogger("mc-quarry")
 
 
 class APIClient:
+    """HTTP client for Modrinth and CurseForge APIs with caching and retry logic."""
+
     def __init__(self, cf_api_key: str = ""):
+        """Initialize API client with optional CurseForge API key."""
         self.cf_api_key = cf_api_key
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
@@ -97,7 +100,16 @@ class APIClient:
     def search_modrinth(
         self, name: str, project_type: str = "mod", limit: int = 5
     ) -> Optional[Dict[str, Any]]:
-        """Search for projects on Modrinth."""
+        """Search for projects on Modrinth.
+
+        Args:
+            name: Project name or search query
+            project_type: Type of project ('mod', 'resourcepack', etc.)
+            limit: Maximum number of results to return
+
+        Returns:
+            Search response dict or None if request failed
+        """
         facets = [[f"project_type:{project_type}"]]
         if project_type == "mod":
             facets.append(["categories:fabric"])
@@ -112,6 +124,14 @@ class APIClient:
         return self.get_json(f"{BASE_API}/v2/search", params=params)
 
     def get_modrinth_project(self, slug: str) -> Optional[Dict[str, Any]]:
+        """Fetch a single Modrinth project by slug.
+
+        Args:
+            slug: Project slug (e.g. 'sodium')
+
+        Returns:
+            Project data dict or None if not found
+        """
         return self.get_json(f"{BASE_API}/v2/project/{slug}")
 
     def find_modrinth_version(
@@ -124,6 +144,15 @@ class APIClient:
         """
         Find the latest compatible version for a project.
         Results are cached to avoid repeated API calls for the same project/version.
+
+        Args:
+            project_id: Modrinth project ID
+            mc_version: Target Minecraft version
+            loader: Mod loader (e.g. 'fabric', 'forge', or None)
+            force_latest: Skip MC version filtering and return absolute latest
+
+        Returns:
+            Version data dict or None if no compatible version found
         """
         # Create cache key from parameters
         cache_key = f"{project_id}:{mc_version}:{loader}:{force_latest}"
@@ -169,6 +198,16 @@ class APIClient:
     def pick_file_from_version(
         self, version_json: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
+        """Pick the best file to download from a Modrinth version.
+
+        Prefers the primary file, then falls back to the first .jar/.zip file.
+
+        Args:
+            version_json: Version object from Modrinth API
+
+        Returns:
+            File info dict with 'filename' and 'url' keys, or None
+        """
         if not version_json:
             return None
         files = version_json.get("files", [])
@@ -185,6 +224,10 @@ class APIClient:
     # --- CurseForge API ---
 
     def get_cf_headers(self) -> Dict[str, str]:
+        """Return CurseForge API authentication headers.
+
+        Uses the API key configured on this client instance.
+        """
         return {"x-api-key": self.cf_api_key}
 
     def search_curseforge(
@@ -235,6 +278,17 @@ class APIClient:
         mod_loader_type: int = 4,
         force_latest: bool = False,
     ) -> Optional[Dict[str, Any]]:
+        """Find the latest compatible file for a CurseForge project.
+
+        Args:
+            mod_id: CurseForge project ID
+            mc_version: Target Minecraft version (e.g. '1.20.1')
+            mod_loader_type: CF loader type (4=Fabric, 1=Forge, 6=NeoForge)
+            force_latest: Skip MC version filtering
+
+        Returns:
+            Latest file dict or None if no compatible file found
+        """
         if not self.cf_api_key:
             return None
         url = f"{CF_API_BASE}/v1/mods/{mod_id}/files"
