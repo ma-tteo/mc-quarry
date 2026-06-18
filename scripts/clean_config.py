@@ -4,7 +4,7 @@ import os
 
 def sanitize_config(input_file="config.json", output_file="config_clean.json"):
     if not os.path.exists(input_file):
-        for root, dirs, files in os.walk("."):
+        for root, _dirs, files in os.walk("."):
             if os.path.basename(root).startswith((".", "_")):
                 continue
             if input_file in files:

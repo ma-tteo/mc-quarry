@@ -1,60 +1,77 @@
 # 📚 Modpack Guide
 
-This document describes all the mods included in the `config.json` file, organized by their respective categories.
+Questo documento descrive tutte le mod incluse nel file `config.json`, organizzate per le rispettive categorie.
 
 ---
 
 ## 💎 CORE MODS
-*The essential foundation: APIs, performance engines, and critical technical fixes.*
+*Le fondamenta essenziali: API, motori di performance e correzioni tecniche critiche per guadagnare FPS.*
 
 ### 🛠️ Libraries & APIs
-*   **Fabric API / Language Kotlin**: Essential hooks and language support for most mods.
-*   **Architectury / Cloth Config / YACL / Fzzy Config**: Configuration interfaces and cross-platform compatibility layers.
-*   **Forge Config API Port**: Allows Forge-style configs to work on Fabric.
-*   **JamLib / Lithostitched / Octo-Lib**: Specialized library mods for world-gen and internal logic.
+*   **Fabric API / Language Kotlin**: Hook essenziali e supporto linguistico per la maggior parte delle mod.
+*   **Architectury / Cloth Config / YACL / Fzzy Config**: Interfacce di configurazione e layer di compatibilità cross-platform.
+*   **Forge Config API Port**: Permette alle configurazioni in stile Forge di funzionare su Fabric.
+*   **JamLib / Lithostitched / Octo-Lib**: Librerie specializzate per la generazione del mondo e logiche interne.
 
-### ⚡ Performance & Engines
-*   **Sodium**: Revolutionary rendering engine. The single most important mod for FPS.
-*   **Lithium / FerriteCore**: Optimizes physics, AI, and drastically reduces RAM usage.
-*   **ModernFix**: Fixes engine bugs, speeds up startup, and optimizes memory.
-*   **Indium**: Sodium addon for compatibility with advanced rendering (like connected grass).
-*   **Concurrent Chunk Management Engine (C2ME)**: Uses all CPU cores to generate chunks (no more world-load lag).
-*   **Starlight / Phosphor**: Rewrites the lighting engine for massive performance gains.
-*   **ImmediatelyFast**: Speeds up rendering of text, GUIs, and entities.
+### ⚡ Performance & Engines (FPS Boosters)
+*   **Sodium**: Motore di rendering rivoluzionario. La mod più importante per gli FPS.
+*   **Lithium / FerriteCore**: Ottimizza la fisica, l'IA e riduce drasticamente l'uso della RAM.
+*   **ModernFix**: Corregge bug del motore, velocizza l'avvio e ottimizza la memoria.
+*   **Indium**: Addon per Sodium per la compatibilità con il rendering avanzato (es. erba connessa).
+*   **Concurrent Chunk Management Engine (C2ME)**: Utilizza tutti i core della CPU per generare i chunk (riduce il lag di caricamento).
+*   **Starlight / Phosphor**: Riscrive il motore di illuminazione per enormi guadagni di prestazioni.
+*   **ImmediatelyFast**: Velocizza il rendering di testo, GUI ed entità.
+*   **Nvidium**: (Solo NVIDIA) Utilizza feature moderne della GPU per distanze di rendering estreme.
+*   **Entity Culling / More Culling / Cull Leaves**: Salta il rendering degli oggetti non visibili.
+*   **Krypton / VMP (Very Many Players)**: Ottimizza lo stack di rete per un multiplayer più fluido.
+*   **Dynamic FPS**: Riduce l'uso delle risorse quando il gioco è in background.
 
-### 🔧 Optimizations & Technical Fixes
-*   **ServerCore / Alternate Current**: Optimizes server-side ticks and the Redstone system.
-*   **Entity Culling / More Culling / Cull Leaves**: Skips rendering objects you can't see.
-*   **Nvidium**: (NVIDIA only) Uses modern GPU features for insane render distances.
-*   **ScalableLux / Exordium / Noxesium**: UI and lighting micro-optimizations.
-*   **Smooth Boot / FastLoad / FastQuit / LazyDFU**: Speeds up every stage of opening and closing the game.
-*   **ForgetMeChunk / ThreadTweak / Memory Leak Fix**: Deep system fixes for stability.
-*   **Packet Fixer / Debugify**: Fixes networking issues and hundreds of vanilla bugs.
-*   **Neruina**: Catches "ticking entity" errors to prevent world corruption.
-*   **MixinTrace**: Detailed crash reports for easier debugging.
+### 🔧 Startup & System Optimizations
+*   **Smooth Boot / FastLoad / FastQuit / LazyDFU**: Velocizza ogni fase di apertura e chiusura del gioco.
+*   **ForgetMeChunk / ThreadTweak / Memory Leak Fix**: Correzioni di sistema profonde per la stabilità.
+*   **Packet Fixer**: Risolve problemi di networking e pacchetti troppo grandi.
 
-### ⚙️ System Tools
-*   **Mod Menu**: The interface to manage and configure all your mods.
-*   **Spark**: A professional-grade profiler to see exactly what is causing lag.
-*   **Sodium Extra / Reese's Sodium Options**: Adds missing OptiFine features and a better UI to Sodium.
-*   **Krypton / VMP**: Optimizes the network stack for smoother multiplayer.
-*   **No Chat Reports**: Disables Microsoft's chat reporting system for privacy.
+---
+
+## 🛠️ UTILITY MODS
+*Strumenti di sistema, utility di debug e miglioramenti funzionali che non impattano direttamente gli FPS.*
+
+### ⚙️ System & Debug Tools
+*   **Mod Menu**: L'interfaccia per gestire e configurare tutte le tue mod.
+*   **Spark**: Un profiler professionale per vedere esattamente cosa sta causando lag.
+*   **Debugify**: Corregge centinaia di bug vanilla in un'unica mod.
+*   **Neruina**: Cattura gli errori delle "ticking entities" per prevenire la corruzione del mondo.
+*   **MixinTrace**: Report di crash dettagliati per un debugging facilitato.
+*   **Shut Up GL Error**: Nasconde i fastidiosi errori OpenGL nei log e in chat.
+
+### 🌍 World & Multiplayer Utils
+*   **Bobby / Chunky**: Permette distanze di visualizzazione maggiori dei limiti del server e pre-generazione dei chunk.
+*   **Clumps**: Raggruppa le sfere di esperienza per ridurre il lag visivo.
+*   **Get It Together, Drops!**: Raggruppa gli oggetti a terra per migliorare le performance.
+*   **Ksyxis / LMD**: Velocizza il caricamento del mondo e la connessione ai server.
+*   **No Chat Reports**: Disabilita il sistema di segnalazione chat di Microsoft per la privacy.
+
+### 🎨 Visual & UI Utilities
+*   **Sodium Extra / Reese's Sodium Options**: Aggiunge feature di OptiFine e una UI migliore a Sodium.
+*   **Puzzle**: Aggiunge feature visive extra (GUI trasparenti, icone, ecc.).
+*   **Language Reload**: Permette di cambiare lingua istantaneamente senza ricaricare tutto il gioco.
+*   **Almanac**: Un'enciclopedia in-game per le mod e i blocchi.
 
 ---
 
 ## 🔥 CURSEFORGE MODS
-*Mods sourced specifically from CurseForge.*
-*   **Connectivity**: Fixes common server connection issues.
-*   **Cupboard / Dynamic-view**: Background utilities for world management.
+*Mod scaricate specificamente da CurseForge.*
+*   **Connectivity**: Risolve problemi comuni di connessione ai server.
+*   **Cupboard / Dynamic-view**: Utility di background per la gestione del mondo.
 
 ---
 
 ## 💡 LIGHT QOL
-*Client-side improvements that don't change gameplay mechanics.*
+*Miglioramenti lato client che non cambiano le meccaniche di gioco.*
 
 *   **Interfaccia & HUD**: BetterF3, AppleSkin, Status Effect Timer, uku's Armor HUD, Ping View, Held Item Info.
 *   **Inventory**: Inventory Profiles Next, Mouse Tweaks, Shulker Box Tooltip.
-*   **Visuals**: 3D Skin Layers, Animatica, BetterGrassify, LambDynamicLights, OptiGUI, Iris Shaders, Capes, Chat Heads, View Model, Zoomify (C-key zoom), Model Gap Fix, EMF / ETF.
+*   **Visuals**: 3D Skin Layers, Animatica, BetterGrassify, LambDynamicLights, OptiGUI, Iris Shaders, Capes, Chat Heads, View Model, Zoomify, Model Gap Fix, EMF / ETF.
 *   **UI & Experience**: Immersive UI, More Chat History, Remove Reloading Screen, Resourcify, Smooth Gui, Smooth Scrolling, Smooth Swapping.
 *   **Utilities & Tweaks**: Tweakeroo, Accurate Block Placement Reborn, custom-hitboxes, Don't Drop It!, FreeCam, Gamma-Utils (Fullbright), Your Options Shall Be Respected (YOSBR).
 *   **Combat & PvP**: Better Hitreg, Crosshair Addons Public, complete-shield-fixes, Marlow's Crystal Optimizer, Hero's Anchor Optimizer.
@@ -64,7 +81,7 @@ This document describes all the mods included in the `config.json` file, organiz
 ---
 
 ## 🎨 TEXTURE PACKS
-*   **Fresh Animations / Fresh Moves**: Realistic mob and player animations.
-*   **Mandala's GUI**: Modern dark mode interface.
-*   **Dramatic Skys / New Glowing Ores**: Improved atmosphere and utility.
-*   **Chat Reporting Helper / Mod Menu Helper**: Quality of life for technical packs.
+*   **Fresh Animations / Fresh Moves**: Animazioni realistiche per mob e player.
+*   **Mandala's GUI**: Interfaccia moderna in dark mode.
+*   **Dramatic Skys / New Glowing Ores**: Atmosfera migliorata e utilità.
+*   **Chat Reporting Helper / Mod Menu Helper**: Quality of life per i pack tecnici.
