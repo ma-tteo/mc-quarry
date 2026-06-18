@@ -9,31 +9,28 @@ Usage:
     python3 web_interface.py [--host 0.0.0.0] [--port 5000]
 """
 
-import os
-import sys
-import json
-import threading
 import logging
+import os
+import re
+import sys
+import threading
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, jsonify, render_template, request
 from flask_socketio import SocketIO, emit
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mc_quarry.config_manager import load_config, save_config
 from mc_quarry.api_client import APIClient
+from mc_quarry.config_manager import load_config, save_config
 from mc_quarry.downloader import (
-    read_all_mod_info,
     filter_mods,
-    execute_download,
-    download_file,
-    write_mod_info,
+    read_all_mod_info,
 )
-from mc_quarry.utils import DownloadStats, BColors
-from mc_quarry.ui_manager import get_string
+from mc_quarry.processor import _process_mod_wrapper
+from mc_quarry.utils import DownloadStats
 
 # Setup Flask app
 app = Flask(
@@ -41,7 +38,7 @@ app = Flask(
     template_folder=Path(__file__).parent / "mc_quarry" / "web" / "templates",
     static_folder=Path(__file__).parent / "mc_quarry" / "web" / "static",
 )
-app.config["SECRET_KEY"] = "mc-quarry-secret-key-change-in-production"
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # Setup logging
@@ -123,6 +120,10 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
                 out_dir = base_dir / f"mods_light_qol_{mc_version}"
                 project_type = "mod"
                 provider = "modrinth"
+            elif "utility" in category:
+                out_dir = base_dir / f"mods_utility_{mc_version}"
+                project_type = "mod"
+                provider = "modrinth"
             elif "texture" in category:
                 out_dir = base_dir / f"texture_packs_{mc_version}"
                 project_type = "resourcepack"
@@ -152,38 +153,30 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
             # Download mod
             try:
                 # Use main's wrapper to handle BOTH Modrinth and CurseForge flawlessly
-                from main import _process_mod_wrapper
-                from mc_quarry import ui_manager
-                
-                # We monkey-patch the UI logger temporarily to send output to the web interface
+                # Interface adapter to route CLI logs to WebSockets
                 class WebUI:
                     def log(self, msg):
-                        import re
                         clean_msg = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', msg)
                         emit_log(clean_msg, "info")
                     def set_status(self, msg):
                         pass
                     def update_progress(self):
                         pass
-                        
-                # Keep reference to old UI to not break things if running in same process long-term
-                old_ui = ui_manager.ui
-                ui_manager.ui = WebUI()
-                
-                try:
-                    _process_mod_wrapper(
-                        client,
-                        mod_name,
-                        mc_version,
-                        project_type,
-                        out_dir,
-                        installed,
-                        all_stats,
-                        provider,
-                        verbose=True
-                    )
-                finally:
-                    ui_manager.ui = old_ui
+
+                web_ui_handler = WebUI()
+
+                _process_mod_wrapper(
+                    client,
+                    mod_name,
+                    mc_version,
+                    project_type,
+                    out_dir,
+                    installed,
+                    all_stats,
+                    provider,
+                    verbose=True,
+                    ui_handler=web_ui_handler
+                )
 
                 processed += 1
                 emit_progress(processed, total_mods, mod_name)
@@ -197,94 +190,6 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
                     }
                 )
 
-                    if (
-                        not search_result
-                        or "hits" not in search_result
-                        or not search_result["hits"]
-                    ):
-                        emit_log(f"❌ Not found: {mod_name}", "error")
-                        all_stats.not_found.append(mod_name)
-                        processed += 1
-                        continue
-
-                    hit = search_result["hits"][0]
-                    project_slug = hit.get("slug", "")
-                    project_id = hit.get("id", "")
-                    title = hit.get("title", mod_name)
-
-                    # Get version
-                    # For resource packs, don't specify loader
-                    loader = "fabric" if project_type == "mod" else None
-                    version = client.find_modrinth_version(
-                        project_id, mc_version, loader=loader
-                    )
-
-                    # If no version found with loader, try without loader (for resource packs)
-                    if not version and loader:
-                        version = client.find_modrinth_version(
-                            project_id, mc_version, loader=None
-                        )
-
-                    # If still no version, try with force_latest
-                    if not version:
-                        version = client.find_modrinth_version(
-                            project_id, mc_version, loader=loader, force_latest=True
-                        )
-
-                    if not version:
-                        emit_log(f"❌ No compatible version: {title}", "error")
-                        all_stats.failed.append((title, "No compatible version"))
-                        processed += 1
-                        continue
-
-                    # Get file
-                    file_info = client.pick_file_from_version(version)
-                    if not file_info:
-                        emit_log(f"❌ No file: {title}", "error")
-                        all_stats.failed.append((title, "No file"))
-                        processed += 1
-                        continue
-
-                    # Delegate download, update logic, and old JAR deletion to the robust execute_download function
-                    project_url = f"https://modrinth.com/{project_type}/{project_slug}"
-
-                    def web_logger(msg):
-                        import re
-
-                        # Clean ANSI codes before emitting to the web frontend
-                        clean_msg = re.sub(
-                            r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "", msg
-                        )
-                        emit_log(clean_msg, "info")
-
-                    execute_download(
-                        title,
-                        project_id,
-                        project_slug,
-                        version["id"],
-                        version["name"],
-                        file_info["filename"],
-                        file_info["url"],
-                        "modrinth",
-                        out_dir,
-                        installed,
-                        all_stats,
-                        web_logger,
-                        project_url,
-                        verbose=True,
-                    )
-
-                    processed += 1
-                    emit_progress(processed, total_mods, title)
-                    emit_stats(
-                        {
-                            "installed": all_stats.installed,
-                            "updated": all_stats.updated,
-                            "skipped": all_stats.skipped_up_to_date,
-                            "failed": len(all_stats.failed),
-                            "not_found": len(all_stats.not_found),
-                        }
-                    )
 
             except Exception as e:
                 emit_log(f"❌ Error downloading {mod_name}: {e}", "error")
@@ -367,7 +272,7 @@ def start_download():
 
     data = request.json or {}
     mc_version = data.get("version", "1.21.11")
-    categories = data.get("categories", ["mods", "light_qol_mods"])
+    categories = data.get("categories", ["core_mods", "utility_mods", "light_qol_mods"])
 
     # Reset state
     download_state = {
@@ -448,7 +353,6 @@ def main():
         host=args.host,
         port=args.port,
         debug=args.debug,
-        allow_unsafe_werkzeug=True,
     )
 
 
