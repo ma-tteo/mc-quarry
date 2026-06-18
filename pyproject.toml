@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mc-quarry"
+version = "6.0.0"
+description = "Modrinth & CurseForge Modpack Downloader"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Matto244" },
+]
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.31.0",
+    "packaging>=23.0",
+    "flask>=3.0.0",
+    "flask-socketio>=5.3.0",
+    "python-engineio>=4.0.0",
+    "python-socketio>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "responses>=0.23",
+    "ruff>=0.1",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "responses>=0.23",
+]
+
+[project.scripts]
+mc-quarry = "main:main"
+mc-quarry-web = "web_interface:main"
+
+[tool.setuptools.packages.find]
+include = ["mc_quarry*"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["N806"]
+"mc_quarry/ui_manager.py" = ["E501", "W291"]
+"mc_quarry/translations.py" = ["E501"]
+"mc_quarry/downloader.py" = ["E501"]
+"mc_quarry/config_manager.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

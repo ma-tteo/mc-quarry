@@ -10,6 +10,7 @@ env/
 venv/
 .env
 .pytest_cache/
+.coverage
 
 # Build/Dist
 build/
@@ -24,6 +25,11 @@ dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# AI / Agent tooling — transient caches
+.omo/
+.qwen/
+.opencode/node_modules/
 
 # Temp & Debug
 /tmp/
