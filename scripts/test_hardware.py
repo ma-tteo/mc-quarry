@@ -27,7 +27,7 @@ def main():
     print("\nDetecting hardware...")
     hardware = detect_hardware()
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  GPU: {hardware['gpu']}")
     print(f"  CPU Cores: {hardware['cpu_cores']}")
 
@@ -36,12 +36,12 @@ def main():
     if hardware["gpu"] not in valid_gpus:
         print(f"\n  ⚠️  Unknown GPU type: {hardware['gpu']}")
     else:
-        print(f"\n  ✅ GPU detection successful")
+        print("\n  ✅ GPU detection successful")
 
     if hardware["cpu_cores"] < 1:
         print(f"  ❌ Invalid CPU core count: {hardware['cpu_cores']}")
     else:
-        print(f"  ✅ CPU detection successful")
+        print("  ✅ CPU detection successful")
 
     print("\n" + "=" * 60)
     print("Test complete!")

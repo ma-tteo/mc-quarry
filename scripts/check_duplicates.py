@@ -9,7 +9,8 @@ from mc_quarry.ui_manager import get_string
 
 # Category definition: (config_key, title)
 MOD_CATEGORIES = [
-    ("mods", "💎 CORE MODS"),
+    ("core_mods", "💎 CORE MODS"),
+    ("utility_mods", "🛠️ UTILITY MODS"),
     ("curseforge_mods", "🔥 CURSEFORGE MODS"),
     ("light_qol_mods", "💡 LIGHT QOL"),
 ]
@@ -22,7 +23,7 @@ def check_duplicates():
         return
 
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             config = json.load(f)
     except Exception as e:
         print(get_string("duplicate_config_load_error", None, e))
@@ -46,13 +47,13 @@ def check_duplicates():
     print(get_string("duplicate_found_summary", None, len(duplicates)))
 
     modified = False
-    for m_low, occurrences in duplicates.items():
+    for _m_low, occurrences in duplicates.items():
         original_name = occurrences[0][2]
         print(
             f"\033[1m{get_string('duplicate_mod_header', None, original_name)}\033[0m"
         )
         print(get_string("duplicate_present_in"))
-        for i, (key, title, name) in enumerate(occurrences):
+        for i, (_key, title, _name) in enumerate(occurrences):
             print(get_string("duplicate_list_entry", None, i + 1, title))
 
         print(get_string("duplicate_keep_all", None, len(occurrences) + 1))
@@ -70,8 +71,12 @@ def check_duplicates():
                 # Rimuovi da tutti gli altri
                 for key, title, name in occurrences:
                     if key != keep_key:
-                        config[key].remove(name)
-                        print(get_string("duplicate_removed_from", None, title))
+                        if name in config[key]:
+                            config[key].remove(name)
+                            print(get_string("duplicate_removed_from", None, title))
+                        else:
+                            # Già rimosso o assente
+                            pass
                 modified = True
             elif idx == len(occurrences):
                 print(get_string("duplicate_skipped"))
@@ -81,8 +86,15 @@ def check_duplicates():
             print(get_string("duplicate_invalid_choice"))
 
     if modified:
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
+        tmp_path = config_path.with_suffix(config_path.suffix + ".tmp")
+        try:
+            with open(tmp_path, "w") as f:
+                json.dump(config, f, indent=4)
+            tmp_path.replace(config_path)
+        except Exception as e:
+            if tmp_path.exists():
+                tmp_path.unlink()
+            raise e
         print(get_string("duplicate_config_updated"))
     else:
         print(get_string("duplicate_no_changes"))

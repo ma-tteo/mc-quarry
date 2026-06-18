@@ -1,12 +1,19 @@
 import json
 import os
-import shutil
-from pathlib import Path
+
 
 def sanitize_config(input_file="config.json", output_file="config_clean.json"):
     if not os.path.exists(input_file):
-        print(f"Errore: Il file {input_file} non esiste.")
-        return
+        for root, dirs, files in os.walk("."):
+            if os.path.basename(root).startswith((".", "_")):
+                continue
+            if input_file in files:
+                input_file = os.path.join(root, input_file)
+                print(f"Trovato: {input_file}")
+                break
+        else:
+            print(f"Errore: Il file {input_file} non esiste.")
+            return
 
     # Chiavi da rimuovere o resettare
     keys_to_remove = [
@@ -17,7 +24,7 @@ def sanitize_config(input_file="config.json", output_file="config_clean.json"):
     ]
 
     try:
-        with open(input_file, "r", encoding="utf-8") as f:
+        with open(input_file, encoding="utf-8") as f:
             config = json.load(f)
 
         # Rimuoviamo le chiavi sensibili

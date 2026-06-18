@@ -110,13 +110,11 @@ def main():
 
     success = True
 
-    if args.modrinth or not (args.modrinth or args.curseforge):
-        if not test_modrinth():
-            success = False
+    if (args.modrinth or not (args.modrinth or args.curseforge)) and not test_modrinth():
+        success = False
 
-    if args.curseforge:
-        if not test_curseforge(args.key or ""):
-            success = False
+    if args.curseforge and not test_curseforge(args.key or ""):
+        success = False
 
     sys.exit(0 if success else 1)
 
