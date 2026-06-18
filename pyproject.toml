@@ -7,7 +7,7 @@ name = "mc-quarry"
 version = "6.0.0"
 description = "Modrinth & CurseForge Modpack Downloader"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     { name = "Matto244" },
 ]
