@@ -105,6 +105,9 @@ def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
         tmp_path.replace(path)
     except OSError as e:
         logger.error(f"Could not save config to {config_path}: {e}")
-        if tmp_path.exists():
-            with contextlib.suppress(Exception):
-                tmp_path.unlink()
+        try:
+            if tmp_path.exists():
+                with contextlib.suppress(Exception):
+                    tmp_path.unlink()
+        except PermissionError:
+            pass
