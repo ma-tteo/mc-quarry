@@ -1,4 +1,3 @@
-import contextlib
 import json
 import logging
 import shutil
@@ -29,7 +28,6 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
     path = Path(config_path)
     clean_path = Path(CLEAN_CONFIG_FILE)
 
-    # Restore config from clean copy if missing
     if not path.exists() and clean_path.exists():
         try:
             shutil.copyfile(str(clean_path), str(path))
@@ -50,7 +48,6 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
         "light_qol_mods": [],
     }
 
-    # Load defaults from config_clean.json if it exists
     if clean_path.exists():
         try:
             with clean_path.open("r") as f:
@@ -107,7 +104,6 @@ def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):
         logger.error(f"Could not save config to {config_path}: {e}")
         try:
             if tmp_path.exists():
-                with contextlib.suppress(Exception):
-                    tmp_path.unlink()
+                tmp_path.unlink()
         except PermissionError:
             pass

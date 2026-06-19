@@ -36,32 +36,20 @@ class TerminalUI:
         self._last_update = 0
 
     def set_total(self, total: int):
-        """Set the total number of tasks and reset progress.
-
-        Args:
-            total: Total number of tasks to track
-        """
+        """Set the total number of tasks and reset progress."""
         with self._lock:
             self.total_tasks = total
             self.completed_tasks = 0
             self.start_time = time.time()
 
     def update_progress(self, increment: int = 1):
-        """Advance the progress counter and redraw the progress bar.
-
-        Args:
-            increment: Number of tasks to add (default: 1)
-        """
+        """Advance the progress counter and redraw the progress bar."""
         with self._lock:
             self.completed_tasks += increment
             self._redraw_progress_bar()
 
     def set_status(self, message: str):
-        """Update the status message displayed on the progress bar.
-
-        Args:
-            message: New status text to display
-        """
+        """Update the status message displayed on the progress bar."""
         with self._lock:
             self.current_status = message
             self._redraw_progress_bar()
@@ -165,14 +153,7 @@ def print_section_header(title: str, icon: str = "", color: str = BColors.OKCYAN
 
 
 def print_progress_bar(current: int, total: int, width: int = 30, label: str = ""):
-    """Print a progress bar with percentage. (Currently unused)
-
-    Args:
-        current: Current progress count
-        total: Total items to process
-        width: Width of the progress bar in characters
-        label: Optional label text to display after the bar
-    """
+    """Print a progress bar with percentage. (Currently unused)"""
     if total == 0:
         return
     ratio = current / total
@@ -198,12 +179,7 @@ def print_progress_bar(current: int, total: int, width: int = 30, label: str = "
 
 
 def detect_hardware() -> Dict[str, Any]:
-    """
-    Detect system hardware (GPU and CPU).
-
-    Returns:
-        Dict with 'gpu' (nvidia/amd/intel/apple/generic) and 'cpu_cores'
-    """
+    """Detect system hardware (GPU vendor and CPU core count)."""
     import subprocess
 
     hardware = {"gpu": "generic", "cpu_cores": os.cpu_count() or 1}
@@ -303,12 +279,7 @@ def detect_hardware() -> Dict[str, Any]:
 
 
 def print_download_summary(stats: Any) -> None:
-    """
-    Print comprehensive download summary with statistics.
-
-    Shows: installed, updated, up-to-date, skipped, failed mods
-    with a clean ASCII art header.
-    """
+    """Print download summary with installed/updated/skipped/failed statistics."""
     inner_width = BOX_WIDTH - 2
     indent_val = 2
 
@@ -405,11 +376,7 @@ from . import translations as _translations  # noqa: E402, F811
 
 
 def __getattr__(name: str):  # noqa: E402
-    """Delegate selected_lang attribute access to translations module.
-
-    This preserves backward compatibility for code that accesses
-    mc_quarry.ui_manager.selected_lang directly.
-    """
+    """Delegate selected_lang access to translations module for backward compat."""
     if name == "selected_lang":
         return _translations.selected_lang
     msg = f"module {__name__!r} has no attribute {name!r}"

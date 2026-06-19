@@ -340,24 +340,13 @@ selected_lang: str = "en"
 
 
 def get_string_no_ansi(s: str) -> str:
-    """Strip ANSI escape codes from a string for length calculation.
-
-    Args:
-        s: String potentially containing ANSI escape sequences
-
-    Returns:
-        Clean string with all ANSI codes removed
-    """
+    """Strip ANSI escape codes from a string for length calculation."""
     ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
     return ansi_escape.sub("", s)
 
 
 def detect_language() -> str:
-    """Detect the system language, returning 'it' for Italian or 'en' as fallback.
-
-    Returns:
-        Language code ('it' or 'en')
-    """
+    """Detect the system language, returning 'it' for Italian or 'en' as fallback."""
     try:
         sys_lang = locale.getlocale()[0]
         return "it" if sys_lang and sys_lang.startswith("it") else "en"
@@ -366,26 +355,13 @@ def detect_language() -> str:
 
 
 def set_selected_language(lang: str):
-    """Set the global language for UI translations.
-
-    Args:
-        lang: Language code (e.g. 'en', 'it')
-    """
+    """Set the global language for UI translations."""
     global selected_lang
     selected_lang = lang
 
 
 def get_string(key: str, lang: Optional[str] = None, *args) -> str:
-    """Retrieve a translated string from the dictionary, falling back to English.
-
-    Args:
-        key: Translation key to look up
-        lang: Optional language override (defaults to selected_lang)
-        *args: Format arguments to substitute into the translated string
-
-    Returns:
-        Translated and formatted string, or the key itself if not found
-    """
+    """Retrieve a translated string from the dictionary, falling back to English."""
     use_lang = lang if lang else selected_lang
     s = translations.get(key, {}).get(
         use_lang, translations.get(key, {}).get("en", key)

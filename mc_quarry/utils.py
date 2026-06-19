@@ -87,7 +87,6 @@ class DownloadStats:
     """Thread-safe accumulator for download statistics."""
 
     def __init__(self):
-        """Initialize all counters to zero."""
         self.lock = threading.Lock()
         self.installed = 0
         self.updated = 0
@@ -97,22 +96,18 @@ class DownloadStats:
         self.not_found: List[str] = []
 
     def add_installed(self):
-        """Increment the installed counter."""
         with self.lock:
             self.installed += 1
 
     def add_updated(self):
-        """Increment the updated counter."""
         with self.lock:
             self.updated += 1
 
     def add_skipped_up_to_date(self):
-        """Increment the skipped-up-to-date counter."""
         with self.lock:
             self.skipped_up_to_date += 1
 
     def add_skipped_incompatible(self):
-        """Increment the skipped-incompatible counter."""
         with self.lock:
             self.skipped_incompatible += 1
 
