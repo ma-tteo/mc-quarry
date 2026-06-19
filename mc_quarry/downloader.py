@@ -16,17 +16,7 @@ logger = logging.getLogger("mc-quarry")
 
 
 def download_file(url: str, dest_path: Path, max_retries: int = 4) -> bool:
-    """
-    Download a file with retry logic.
-
-    Args:
-        url: Download URL
-        dest_path: Destination file path
-        max_retries: Maximum retry attempts
-
-    Returns:
-        True if download succeeded, False otherwise
-    """
+    """Download a file with retry logic."""
     headers = {"User-Agent": "modpack-downloader/3.0"}
     for attempt in range(1, max_retries + 1):
         try:
@@ -59,17 +49,7 @@ def write_mod_info(
     filename: str,
     provider: str = "modrinth",
 ):
-    """Save .modinfo JSON metadata file.
-
-    Args:
-        jar_path: Path to the downloaded JAR/ZIP file
-        project_id: Unique project identifier
-        project_slug: Project slug name
-        version_id: Specific version identifier
-        version_name: Human-readable version name
-        filename: Original downloaded filename
-        provider: Source provider ('modrinth' or 'curseforge')
-    """
+    """Save .modinfo JSON metadata file."""
     info_path = jar_path.with_suffix(jar_path.suffix + ".modinfo")
     metadata = {
         "project_id": str(project_id),
@@ -87,14 +67,7 @@ def write_mod_info(
 
 
 def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
-    """Read all .modinfo files from directory and build index.
-
-    Args:
-        directory: Path to the mods directory to scan
-
-    Returns:
-        Dict mapping project_id and project_slug to their metadata
-    """
+    """Read all .modinfo files from directory and build index."""
     installed = {}
     for info_file in directory.glob("*.modinfo"):
         try:
@@ -118,15 +91,7 @@ def read_all_mod_info(directory: Path) -> Dict[str, Dict[str, Any]]:
 
 
 def compare_versions(v1: str, v2: str) -> int:
-    """Compare two version strings.
-
-    Args:
-        v1: First version string
-        v2: Second version string
-
-    Returns:
-        1 if v1 > v2, -1 if v1 < v2, 0 if equal
-    """
+    """Compare two version strings. Returns 1, -1, or 0."""
     try:
         ver1, ver2 = pkg_version.parse(v1), pkg_version.parse(v2)
         if ver1 > ver2:
@@ -163,19 +128,7 @@ def compare_versions(v1: str, v2: str) -> int:
 def check_incompatibility(
     mod_name: str, mc_version: str, config: Dict[str, Any]
 ) -> Tuple[bool, Optional[str]]:
-    """
-    Check if a mod is incompatible with the current Minecraft version.
-
-    Evaluates version-based incompatibility rules (<, >, +, exact match).
-
-    Args:
-        mod_name: Name of the mod to check
-        mc_version: Target Minecraft version
-        config: Configuration dict with 'incompatible_mods' rules
-
-    Returns:
-        Tuple of (is_incompatible, reason_message_or_None)
-    """
+    """Check if a mod is incompatible with the current Minecraft version."""
     incompatible_rules = config.get("incompatible_mods", {})
     for rule_mod, invalid_versions in incompatible_rules.items():
         if rule_mod.lower() == mod_name.lower():
@@ -213,22 +166,10 @@ def filter_mods(
     config: Dict[str, Any],
     hardware: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[str], List[str]]:
-    """
-    Filter mods based on compatibility rules and hardware requirements.
-
-    Args:
-        mod_list: List of mod names to filter
-        mc_version: Minecraft version to check compatibility against
-        config: Configuration dict with incompatibility and conflict rules
-        hardware: Optional hardware info dict (calls detect_hardware() if not provided)
-
-    Returns:
-        Tuple of (eligible_mods, skipped_reasons)
-    """
+    """Filter mods based on compatibility rules and hardware requirements."""
     eligible_mods = []
     skipped_reasons = []
 
-    # Detect hardware once if not provided
     if hardware is None:
         hardware = detect_hardware()
 
@@ -292,25 +233,13 @@ def execute_download(
     project_url: str = "",
     verbose: bool = False,
 ):
-    """
-    Execute download logic for a single mod/resource pack.
-
-    Handles: up-to-date check, old version removal, download, and metadata writing.
-
-    Color scheme:
-    - ✅ OKGREEN: Success (installed, up-to-date, downloaded)
-    - 🔄 OKCYAN: Update available
-    - ⚠️  WARNING: Indexed (file exists, no metadata)
-    - ❌ FAIL: Download failed
-    """
+    """Execute download logic for a single mod/resource pack."""
     file_name = sanitize_filename(filename)
     dest_path = output_dir / file_name
 
-    # Check if mod is already installed
     installed_data = installed_mods.get(project_id) or installed_mods.get(project_slug)
     needs_download = True
 
-    # Prepare status message with provider info
     info_parts = [f"📦 {version_name}", f"🌐 {provider.capitalize()}"]
     if project_url:
         info_parts.append(f"🔗 {BColors.UNDERLINE}{project_url}{BColors.ENDC}")
