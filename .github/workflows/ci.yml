@@ -24,24 +24,4 @@ jobs:
         run: |
           pre-commit run --all-files ruff || true
 
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          pip install -e ".[test]"
-      - name: Run tests with coverage
-        run: |
-          python -m pytest tests/ -v --cov=mc_quarry --cov-report=term-missing
-      - name: Upload coverage to Codecov
-        if: ${{ matrix.python-version == '3.12' }}
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: false
+

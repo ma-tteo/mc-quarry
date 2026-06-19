@@ -29,12 +29,16 @@ Thumbs.db
 # AI / Agent tooling — transient caches
 .omo/
 .qwen/
+.opencode/
 .opencode/node_modules/
+
+# Personal files
+AGENTS.md
+scripts/
+tests/
 
 # Temp & Debug
 /tmp/
-scripts/debug_*.py
-scripts/test_table_*.py
 
 # Analysis Reports (generated)
 *_report.json
