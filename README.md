@@ -11,7 +11,7 @@
 
 **Modrinth & CurseForge Modpack Downloader** — Automate downloading and managing Minecraft (Fabric) mods and texture packs with advanced filtering and hardware detection.
 
-[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 [![Modrinth](https://img.shields.io/badge/Source-Modrinth-1bd96a?logo=modrinth)](https://modrinth.com/)
 [![CurseForge](https://img.shields.io/badge/Source-CurseForge-f16436?logo=curseforge)](https://curseforge.com/)
@@ -27,48 +27,36 @@
 | 💻 **Hardware Aware** | Automatically skips mods like *Nvidium* (if not NVIDIA) or *C2ME* (if low CPU cores). |
 | 🛡️ **Config Safety** | Critical protection against corrupted JSON files; automatic backups created. |
 | 🔒 **Security First** | Protects against Path Traversal vulnerabilities during file copies. |
-| 🧹 **Duplicate Check** | Interactive startup check to remove the same mod from multiple categories. |
-| 📦 **Update Logic** | Intelligently removes old JARs and keeps metadata in `.modinfo` files. |
+| 📦 **Update Logic** | Removes old JARs and keeps metadata in `.modinfo` files. |
 | 📂 **Smart Folders** | Supports PrismLauncher, MultiMC, and Vanilla with `<INSTANCE_NAME>` detection. |
-
----
-
-## 📋 Requirements
-
-- **Python 3.x**
-- **Dependencies**: `requests`, `packaging` (`pip install -r requirements.txt`)
+| 🕸️ **Web UI** | Real-time progress via Flask + SocketIO web interface. |
 
 ---
 
 ## 🚀 Usage
 
-### Standard Run
+### CLI
 ```bash
-python3 main.py
-```
-The script will guide you through:
-1. **Duplicate Cleanup**: Ensuring your `config.json` is clean.
-2. **Version Selection**: Choosing your target Minecraft version (e.g., `1.21.1`).
-3. **Category Choice**: Choosing which QoL levels to install (Light, Medium, Survival).
-4. **Direct Installation**: Copying files directly to your Minecraft instance.
-
-### CLI / Batch Mode
-```bash
-python3 main.py --version 1.21.11 --yes --threads 8
+python3 main.py [--version 1.21.1] [--yes] [--threads 5]
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--version` | Target Minecraft version (required for batch mode). |
-| `--yes`, `-y` | Auto-accept all prompts (best for scripts). |
-| `--verbose`, `-v` | Show detailed logs (updates, skipped, and "not found" details). |
+| `--yes`, `-y` | Auto-accept all prompts. |
+| `--verbose`, `-v` | Show detailed logs. |
 | `--threads` | Parallel download threads (default: 5). |
+
+### Web UI
+```bash
+python3 web_interface.py [--host 0.0.0.0] [--port 5000]
+```
 
 ---
 
 ## ⚙️ Configuration (`config.json`)
 
-The configuration is now organized logically for better management:
+A `config.json` file (gitignored) defines mods, texture packs, and hardware rules:
 
 ```json
 {
@@ -87,23 +75,13 @@ The configuration is now organized logically for better management:
 }
 ```
 
----
-
-## 🛠️ Utility Scripts
-
-**Located in the `scripts/` folder:**
-- `check_duplicates.py`: Manual check for redundant mods.
-- `test_connection.py`: Validates API access to Modrinth/CurseForge.
-- `test_hardware.py`: Shows what the script "sees" regarding your GPU/CPU.
-
-**Located in the root folder:**
-- `clean_config.py`: Generates a clean `config_clean.json` without private data (API keys, local paths) for safe sharing.
+A `config_clean.json` template is available in the repository as a safe sharing reference (no API keys or local paths).
 
 ---
 
 ## 💻 Platform Compatibility
 
-Tested and supported on **Windows**, **macOS**, and **Linux** (Ubuntu, Fedora, Arch, Void).
+Tested on **Windows**, **macOS**, and **Linux** (Ubuntu, Fedora, Arch, Void).
 
 ---
 

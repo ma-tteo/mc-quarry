@@ -30,7 +30,75 @@ from mc_quarry.downloader import (
     read_all_mod_info,
 )
 from mc_quarry.processor import _process_mod_wrapper
+from mc_quarry.ui_manager import detect_hardware
 from mc_quarry.utils import DownloadStats
+
+# Minecraft version pattern — kept in sync with main.py:MC_VERSION_PATTERN
+MC_VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?([+-][a-zA-Z0-9.]+)?$")
+
+# Category → (output subdir template, project_type, provider).
+# Aligned with main.py:MOD_CATEGORIES so the web routes mods to the same
+# folders as the CLI. Fixes the previous bug where curseforge_mods landed in
+# mods_core_* instead of mods_curseforge_*.
+CATEGORY_MAP: Dict[str, Dict[str, str]] = {
+    "core_mods": {
+        "subdir": "mods_core_{ver}",
+        "project_type": "mod",
+        "provider": "modrinth",
+    },
+    "utility_mods": {
+        "subdir": "mods_utility_{ver}",
+        "project_type": "mod",
+        "provider": "modrinth",
+    },
+    "light_qol_mods": {
+        "subdir": "mods_light_qol_{ver}",
+        "project_type": "mod",
+        "provider": "modrinth",
+    },
+    "curseforge_mods": {
+        "subdir": "mods_curseforge_{ver}",
+        "project_type": "mod",
+        "provider": "curseforge",
+    },
+    "texture_packs": {
+        "subdir": "texture_packs_{ver}",
+        "project_type": "resourcepack",
+        "provider": "modrinth",
+    },
+    "curseforge_texture_packs": {
+        "subdir": "texture_packs_cf_{ver}",
+        "project_type": "resourcepack",
+        "provider": "curseforge",
+    },
+}
+
+# Editable top-level config keys the web UI is allowed to write. Anything
+# outside this whitelist passed to POST /api/config is ignored.
+EDITABLE_CONFIG_KEYS = {
+    "curseforge_api_key",
+    "language",
+    "install_light_qol",
+    "mods_folder",
+    "resourcepacks_folder",
+    "core_mods",
+    "utility_mods",
+    "light_qol_mods",
+    "curseforge_mods",
+    "texture_packs",
+    "curseforge_texture_packs",
+}
+
+# Type expectations for validation of editable keys.
+CONFIG_LIST_KEYS = {
+    "core_mods",
+    "utility_mods",
+    "light_qol_mods",
+    "curseforge_mods",
+    "texture_packs",
+    "curseforge_texture_packs",
+}
+CONFIG_BOOL_KEYS = {"install_light_qol"}
 
 # Setup Flask app
 app = Flask(
@@ -45,16 +113,44 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mc-quarry-web")
 
-# Global state
+# Global state — guarded by `state_lock` because it is shared between the
+# background download thread and HTTP request handlers (previously unsynchronized).
+state_lock = threading.Lock()
 download_state = {
     "running": False,
     "progress": 0,
     "current_mod": "",
     "status": "idle",  # idle, running, complete, error
     "stats": {"installed": 0, "updated": 0, "skipped": 0, "failed": 0, "not_found": 0},
+    "summary": {"failed": [], "not_found": [], "skipped_incompatible": 0},
     "log": [],
     "error": None,
 }
+
+
+def _snapshot_state() -> Dict[str, Any]:
+    """Return a shallow copy of download_state under the lock (thread-safe read)."""
+    with state_lock:
+        return {
+            k: (v.copy() if isinstance(v, (dict, list)) else v)
+            for k, v in download_state.items()
+        }
+
+
+def _reset_state() -> None:
+    """Reset download_state to a fresh idle snapshot (must hold no other assumptions)."""
+    global download_state
+    with state_lock:
+        download_state = {
+            "running": False,
+            "progress": 0,
+            "current_mod": "",
+            "status": "idle",
+            "stats": {"installed": 0, "updated": 0, "skipped": 0, "failed": 0, "not_found": 0},
+            "summary": {"failed": [], "not_found": [], "skipped_incompatible": 0},
+            "log": [],
+            "error": None,
+        }
 
 
 def emit_log(message: str, level: str = "info"):
@@ -83,16 +179,19 @@ def emit_stats(stats: Dict[str, int]):
 
 def run_download_task(config: Dict[str, Any], mc_version: str, categories: list):
     """Background task to run the download process."""
-    global download_state
-
     try:
-        download_state["running"] = True
-        download_state["status"] = "running"
-        download_state["error"] = None
+        with state_lock:
+            download_state["running"] = True
+            download_state["status"] = "running"
+            download_state["error"] = None
 
         client = APIClient(cf_api_key=config.get("curseforge_api_key", ""))
         base_dir = Path(__file__).parent / "modpack"
         all_stats = DownloadStats()
+
+        # Detect hardware once (the CLI does the same) and pass it to filter_mods
+        # so mods are not re-detected on every iteration.
+        hardware = detect_hardware()
 
         # Build list of all mods to process
         all_mods = []
@@ -105,43 +204,30 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
         processed = 0
 
         for category, mod_name in all_mods:
-            if not download_state["running"]:
-                break
-
-            download_state["current_mod"] = mod_name
+            with state_lock:
+                if not download_state["running"]:
+                    break
+                download_state["current_mod"] = mod_name
             emit_progress(processed, total_mods, mod_name)
 
-            # Determine output directory and project type
-            if "curseforge" in category:
-                out_dir = base_dir / f"mods_core_{mc_version}"
-                project_type = "mod"
-                provider = "curseforge"
-            elif "light_qol" in category:
-                out_dir = base_dir / f"mods_light_qol_{mc_version}"
-                project_type = "mod"
-                provider = "modrinth"
-            elif "utility" in category:
-                out_dir = base_dir / f"mods_utility_{mc_version}"
-                project_type = "mod"
-                provider = "modrinth"
-            elif "texture" in category:
-                out_dir = base_dir / f"texture_packs_{mc_version}"
-                project_type = "resourcepack"
-                provider = "modrinth"
-            else:
-                out_dir = base_dir / f"mods_core_{mc_version}"
-                project_type = "mod"
-                provider = "modrinth"
+            # Resolve output dir / project type / provider from CATEGORY_MAP.
+            # Unknown categories fall back to core_mods (modrinth, mod).
+            cat_cfg = CATEGORY_MAP.get(
+                category, CATEGORY_MAP["core_mods"]
+            )
+            out_dir = base_dir / cat_cfg["subdir"].format(ver=mc_version)
+            project_type = cat_cfg["project_type"]
+            provider = cat_cfg["provider"]
 
             out_dir.mkdir(parents=True, exist_ok=True)
             installed = read_all_mod_info(out_dir)
 
-            # Filter mods
-            active_list, skipped = filter_mods([mod_name], mc_version, config)
+            # Filter mods (hardware passed explicitly → no per-mod re-detection)
+            active_list, skipped = filter_mods([mod_name], mc_version, config, hardware=hardware)
 
             # Handle skipped mods
             for skip_name, reason in skipped:
-                emit_log(f"⚠️  Skipped: {skip_name} - {reason}", "warning")
+                emit_log(f"Skipped: {skip_name} — {reason}", "warning")
                 all_stats.skipped_incompatible += 1
                 processed += 1
                 emit_progress(processed, total_mods, skip_name)
@@ -175,7 +261,7 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
                     all_stats,
                     provider,
                     verbose=True,
-                    ui_handler=web_ui_handler
+                    ui_handler=web_ui_handler,
                 )
 
                 processed += 1
@@ -190,32 +276,45 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
                     }
                 )
 
-
             except Exception as e:
-                emit_log(f"❌ Error downloading {mod_name}: {e}", "error")
+                emit_log(f"Error downloading {mod_name}: {e}", "error")
                 all_stats.failed.append((mod_name, str(e)))
                 processed += 1
 
-        download_state["stats"] = {
+        final_stats = {
             "installed": all_stats.installed,
             "updated": all_stats.updated,
             "skipped": all_stats.skipped_up_to_date,
             "failed": len(all_stats.failed),
             "not_found": len(all_stats.not_found),
         }
+        final_summary = {
+            "failed": list(all_stats.failed),
+            "not_found": list(all_stats.not_found),
+            "skipped_incompatible": all_stats.skipped_incompatible,
+        }
 
-        emit_stats(download_state["stats"])
-        download_state["status"] = "complete"
-        emit_log("✅ Download complete!", "success")
+        with state_lock:
+            download_state["stats"] = final_stats
+            download_state["summary"] = final_summary
+
+        emit_stats(final_stats)
+        # Push the final report to trigger the summary modal on the client.
+        socketio.emit("complete", {"stats": final_stats, **final_summary})
+        with state_lock:
+            download_state["status"] = "complete"
+        emit_log("Download complete!", "success")
 
     except Exception as e:
-        download_state["error"] = str(e)
-        download_state["status"] = "error"
-        emit_log(f"❌ Error: {e}", "error")
+        with state_lock:
+            download_state["error"] = str(e)
+            download_state["status"] = "error"
+        emit_log(f"Error: {e}", "error")
         logger.exception("Download task failed")
 
     finally:
-        download_state["running"] = False
+        with state_lock:
+            download_state["running"] = False
 
 
 @app.route("/")
@@ -227,16 +326,24 @@ def index():
 @app.route("/api/status")
 def get_status():
     """Get current download status."""
-    return jsonify(
-        {
-            "running": download_state["running"],
-            "progress": download_state["progress"],
-            "current_mod": download_state["current_mod"],
-            "status": download_state["status"],
-            "stats": download_state["stats"],
-            "error": download_state["error"],
-        }
-    )
+    snap = _snapshot_state()
+    # Don't leak the heavy log buffer; clients receive logs via Socket.IO.
+    snap.pop("log", None)
+    return jsonify(snap)
+
+
+@app.route("/api/hardware")
+def get_hardware():
+    """Detect and return system hardware used for mod filtering."""
+    hw = detect_hardware()
+    return jsonify({"gpu": hw.get("gpu", "generic"), "cpu_cores": hw.get("cpu_cores", 1)})
+
+
+@app.route("/api/summary")
+def get_summary():
+    """Return the per-mod summary of the last download (failures, not found, skips)."""
+    snap = _snapshot_state()
+    return jsonify(snap.get("summary", {"failed": [], "not_found": [], "skipped_incompatible": 0}))
 
 
 @app.route("/api/config")
@@ -251,11 +358,32 @@ def get_config():
 
 @app.route("/api/config", methods=["POST"])
 def update_config():
-    """Update configuration."""
+    """Update configuration with minimal schema validation.
+
+    Only editable keys (EDITABLE_CONFIG_KEYS) are accepted; unknown keys are
+    ignored to prevent clobbering rule sections. List keys must be lists of
+    strings; boolean keys must be booleans.
+    """
     try:
-        new_config = request.json
+        new_config = request.json or {}
         config = load_config()
-        config.update(new_config)
+        for key, value in new_config.items():
+            if key not in EDITABLE_CONFIG_KEYS:
+                continue
+            if key in CONFIG_LIST_KEYS and not (
+                isinstance(value, list)
+                and all(isinstance(x, str) for x in value)
+            ):
+                return (
+                    jsonify({"success": False, "error": f"'{key}' must be a list of strings"}),
+                    400,
+                )
+            if key in CONFIG_BOOL_KEYS and not isinstance(value, bool):
+                return (
+                    jsonify({"success": False, "error": f"'{key}' must be a boolean"}),
+                    400,
+                )
+            config[key] = value
         save_config(config)
         return jsonify({"success": True})
     except Exception as e:
@@ -265,31 +393,21 @@ def update_config():
 @app.route("/api/start", methods=["POST"])
 def start_download():
     """Start download process."""
-    global download_state
-
-    if download_state["running"]:
-        return jsonify({"success": False, "error": "Download already running"}), 400
+    with state_lock:
+        if download_state["running"]:
+            return jsonify({"success": False, "error": "Download already running"}), 400
 
     data = request.json or {}
-    mc_version = data.get("version", "1.21.11")
-    categories = data.get("categories", ["core_mods", "utility_mods", "light_qol_mods"])
+    mc_version = (data.get("version") or "").strip()
+    if not MC_VERSION_PATTERN.match(mc_version):
+        return jsonify({"success": False, "error": "Invalid Minecraft version format"}), 400
 
-    # Reset state
-    download_state = {
-        "running": False,
-        "progress": 0,
-        "current_mod": "",
-        "status": "idle",
-        "stats": {
-            "installed": 0,
-            "updated": 0,
-            "skipped": 0,
-            "failed": 0,
-            "not_found": 0,
-        },
-        "log": [],
-        "error": None,
-    }
+    categories = data.get("categories", ["core_mods", "utility_mods", "light_qol_mods"])
+    if not isinstance(categories, list) or not categories:
+        return jsonify({"success": False, "error": "At least one category is required"}), 400
+
+    # Reset state for a fresh run
+    _reset_state()
 
     config = load_config()
 
@@ -299,8 +417,9 @@ def start_download():
     )
     thread.start()
 
-    download_state["running"] = True
-    download_state["status"] = "running"
+    with state_lock:
+        download_state["running"] = True
+        download_state["status"] = "running"
 
     return jsonify({"success": True})
 
@@ -308,9 +427,9 @@ def start_download():
 @app.route("/api/stop", methods=["POST"])
 def stop_download():
     """Stop download process."""
-    global download_state
-    download_state["running"] = False
-    emit_log("⏹️  Stopping download...", "warning")
+    with state_lock:
+        download_state["running"] = False
+    emit_log("Stopping download...", "warning")
     return jsonify({"success": True})
 
 
