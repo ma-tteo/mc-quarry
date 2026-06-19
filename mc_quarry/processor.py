@@ -27,12 +27,6 @@ def _generate_slug_candidates(name: str) -> List[str]:
 
     The search API is unreliable (returns 0 hits for all queries as of
     mid-2026), so we infer slugs for direct project endpoint lookups.
-
-    Args:
-        name: Mod display name (e.g. 'Fabric API', 'FerriteCore')
-
-    Returns:
-        List of candidate slugs ordered by likelihood.
     """
     candidates: List[str] = []
     base = name.strip()
@@ -99,24 +93,7 @@ def _process_mod_wrapper(
     verbose: bool = False,
     ui_handler: Optional[Any] = None,
 ) -> None:
-    """
-    Generic wrapper for processing mods from any provider (Modrinth/CurseForge).
-
-    Handles search, version resolution, and download dispatch.
-    Prints messages via UI manager for thread safety.
-
-    Args:
-        client: API client instance
-        name: Mod name or URL
-        mc_version: Target Minecraft version
-        project_type: 'mod' or 'resourcepack'
-        output_dir: Directory to download into
-        installed_mods: Dict of already installed mods (project_id/slug -> info)
-        stats: DownloadStats accumulator (thread-safe)
-        provider: 'modrinth' or 'curseforge'
-        verbose: Show detailed log messages
-        ui_handler: Optional UI handler (falls back to global CLI UI)
-    """
+    """Dispatch mod processing to the appropriate provider handler."""
     from .ui_manager import ui as global_ui
 
     clean_name = name.strip()
@@ -152,23 +129,7 @@ def _handle_modrinth(
     verbose: bool,
     ui: Any,
 ) -> None:
-    """
-    Handle a Modrinth mod download.
-
-    Searches by URL slug or name, resolves the latest compatible version,
-    and dispatches to execute_download.
-
-    Args:
-        client: API client instance with Modrinth methods
-        clean_name: Mod name or Modrinth URL
-        project_type: 'mod' or 'resourcepack'
-        mc_version: Target Minecraft version
-        output_dir: Directory to download into
-        installed_mods: Dict of already installed mods
-        stats: DownloadStats accumulator (thread-safe)
-        verbose: Show detailed log messages
-        ui: UI handler for progress and log output
-    """
+    """Resolve and download a mod from Modrinth."""
     project = None
 
     if "modrinth.com" in clean_name:
@@ -278,23 +239,7 @@ def _handle_curseforge(
     verbose: bool,
     ui: Any,
 ) -> None:
-    """
-    Handle a CurseForge mod download.
-
-    Validates API key, searches by name or URL, resolves the latest
-    compatible file, and dispatches to execute_download.
-
-    Args:
-        client: API client instance with CurseForge methods
-        clean_name: Mod name or CurseForge URL
-        project_type: 'mod' or 'resourcepack'
-        mc_version: Target Minecraft version
-        output_dir: Directory to download into
-        installed_mods: Dict of already installed mods
-        stats: DownloadStats accumulator (thread-safe)
-        verbose: Show detailed log messages
-        ui: UI handler for progress and log output
-    """
+    """Resolve and download a mod from CurseForge."""
     if not client.cf_api_key:
         ui.log(
             f"{BColors.BOLD}{clean_name}{BColors.ENDC}:"

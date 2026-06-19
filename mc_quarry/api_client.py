@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-# Modrinth API base URL
 BASE_API = "https://api.modrinth.com"
 
 # CurseForge API base URL and constants
@@ -17,7 +16,6 @@ CF_MOD_CLASS_ID = 6  # Mod category
 CF_RESOURCE_PACK_CLASS_ID = 12  # Texture pack category
 CF_SORT_FIELD_RELEVANCE = 2  # Sort by relevance
 
-# HTTP headers for API requests
 HEADERS = {"User-Agent": "modpack-downloader/3.0"}
 
 logger = logging.getLogger("mc-quarry")
@@ -43,19 +41,7 @@ class APIClient:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Optional[Union[Dict[str, Any], List[Any]]]:
-        """
-        Execute GET request with exponential backoff retry logic.
-
-        Args:
-            url: API endpoint URL
-            max_retries: Maximum number of retry attempts
-            backoff: Base backoff time in seconds
-            params: Optional query parameters
-            headers: Optional request headers
-
-        Returns:
-            Parsed JSON response or None on failure
-        """
+        """Execute GET request with exponential backoff retry logic."""
         current_headers = headers if headers else {}
         for attempt in range(1, max_retries + 1):
             try:
@@ -71,7 +57,6 @@ class APIClient:
                 elif r.status_code == 404:
                     return None
                 elif r.status_code == 429:
-                    # Rate limited - use server-specified retry time or exponential backoff
                     wait_time = int(
                         r.headers.get("Retry-After", backoff * (2 ** (attempt - 1)))
                     )
@@ -100,16 +85,7 @@ class APIClient:
     def search_modrinth(
         self, name: str, project_type: str = "mod", limit: int = 5
     ) -> Optional[Dict[str, Any]]:
-        """Search for projects on Modrinth.
-
-        Args:
-            name: Project name or search query
-            project_type: Type of project ('mod', 'resourcepack', etc.)
-            limit: Maximum number of results to return
-
-        Returns:
-            Search response dict or None if request failed
-        """
+        """Search for projects on Modrinth."""
         facets = [[f"project_type:{project_type}"]]
         if project_type == "mod":
             facets.append(["categories:fabric"])
@@ -124,14 +100,7 @@ class APIClient:
         return self.get_json(f"{BASE_API}/v2/search", params=params)
 
     def get_modrinth_project(self, slug: str) -> Optional[Dict[str, Any]]:
-        """Fetch a single Modrinth project by slug.
-
-        Args:
-            slug: Project slug (e.g. 'sodium')
-
-        Returns:
-            Project data dict or None if not found
-        """
+        """Fetch a single Modrinth project by slug."""
         return self.get_json(f"{BASE_API}/v2/project/{slug}")
 
     def find_modrinth_version(
@@ -141,32 +110,16 @@ class APIClient:
         loader: str = "fabric",
         force_latest: bool = False,
     ) -> Optional[Dict[str, Any]]:
-        """
-        Find the latest compatible version for a project.
-        Results are cached to avoid repeated API calls for the same project/version.
-
-        Args:
-            project_id: Modrinth project ID
-            mc_version: Target Minecraft version
-            loader: Mod loader (e.g. 'fabric', 'forge', or None)
-            force_latest: Skip MC version filtering and return absolute latest
-
-        Returns:
-            Version data dict or None if no compatible version found
-        """
-        # Create cache key from parameters
+        """Find the latest compatible version for a project. Results are cached."""
         cache_key = f"{project_id}:{mc_version}:{loader}:{force_latest}"
 
-        # Check cache first
         with self._cache_lock:
             if cache_key in self._version_cache:
                 logger.debug(f"Cache hit for {cache_key}")
                 return self._version_cache[cache_key]
 
-        # Build query parameters
         params = {}
 
-        # Only filter by version if not force_latest
         if not force_latest:
             params["game_versions"] = json.dumps([mc_version])
 
@@ -175,7 +128,6 @@ class APIClient:
 
         logger.debug(f"Fetching versions for {project_id} with params: {params}")
 
-        # Fetch versions
         versions = self.get_json(
             f"{BASE_API}/v2/project/{project_id}/version", params=params
         )
@@ -201,12 +153,6 @@ class APIClient:
         """Pick the best file to download from a Modrinth version.
 
         Prefers the primary file, then falls back to the first .jar/.zip file.
-
-        Args:
-            version_json: Version object from Modrinth API
-
-        Returns:
-            File info dict with 'filename' and 'url' keys, or None
         """
         if not version_json:
             return None
@@ -224,25 +170,13 @@ class APIClient:
     # --- CurseForge API ---
 
     def get_cf_headers(self) -> Dict[str, str]:
-        """Return CurseForge API authentication headers.
-
-        Uses the API key configured on this client instance.
-        """
+        """Return CurseForge API authentication headers."""
         return {"x-api-key": self.cf_api_key}
 
     def search_curseforge(
         self, name: str, class_id: int = CF_MOD_CLASS_ID
     ) -> Optional[Dict[str, Any]]:
-        """
-        Search CurseForge for a mod or resource pack.
-
-        Args:
-            name: Project name to search
-            class_id: CF_MOD_CLASS_ID for mods, CF_RESOURCE_PACK_CLASS_ID for texture packs
-
-        Returns:
-            First search result or None
-        """
+        """Search CurseForge for a mod or resource pack."""
         if not self.cf_api_key:
             return None
         url = f"{CF_API_BASE}/v1/mods/search"
@@ -278,17 +212,7 @@ class APIClient:
         mod_loader_type: int = 4,
         force_latest: bool = False,
     ) -> Optional[Dict[str, Any]]:
-        """Find the latest compatible file for a CurseForge project.
-
-        Args:
-            mod_id: CurseForge project ID
-            mc_version: Target Minecraft version (e.g. '1.20.1')
-            mod_loader_type: CF loader type (4=Fabric, 1=Forge, 6=NeoForge)
-            force_latest: Skip MC version filtering
-
-        Returns:
-            Latest file dict or None if no compatible file found
-        """
+        """Find the latest compatible file for a CurseForge project."""
         if not self.cf_api_key:
             return None
         url = f"{CF_API_BASE}/v1/mods/{mod_id}/files"
