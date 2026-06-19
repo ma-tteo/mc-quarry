@@ -1,10 +1,10 @@
 import json
 import logging
 import shutil
-import sys
 from pathlib import Path
 from typing import Any, Dict
 
+from .exceptions import ConfigError
 from .ui_manager import get_string
 from .utils import BColors
 
@@ -82,9 +82,13 @@ def load_config(config_path: str = CONFIG_FILE) -> Dict[str, Any]:
             except Exception as backup_err:
                 logger.error(f"Could not back up corrupted file: {backup_err}")
 
-            sys.exit(1)
+            raise ConfigError(
+                f"Config file {config_path} is corrupted. "
+                f"Backup saved to {backup_path}. Please fix the JSON and restart."
+            )
     else:
-        logger.info(f"Config file {config_path} not found. Creating a new one.")
+        logger.info(f"Config file {config_path} not found. Using defaults.")
+        return default_config
 
 
 def save_config(data: Dict[str, Any], config_path: str = CONFIG_FILE):

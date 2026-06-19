@@ -37,7 +37,9 @@ from typing import Any, Dict, Optional
 
 from mc_quarry.api_client import APIClient
 from mc_quarry.config_manager import load_config, save_config
+from mc_quarry.constants import MOD_CATEGORIES_LIST as MOD_CATEGORIES
 from mc_quarry.downloader import filter_mods, read_all_mod_info
+from mc_quarry.exceptions import ConfigError
 from mc_quarry.processor import _process_mod_wrapper
 from mc_quarry.ui_manager import (
     detect_hardware,
@@ -65,13 +67,7 @@ logger = logging.getLogger("mc-quarry")
 # Semantic version pattern for Minecraft versions (e.g., 1.21.11, 1.20.1-beta.3)
 MC_VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?([+-][a-zA-Z0-9.]+)?$")
 
-# Category definition: (config_key, project_type, output_subdir, title, config_flag)
-MOD_CATEGORIES = [
-    ("core_mods", "mod", "mods_core", "💎 CORE MODS", None),
-    ("utility_mods", "mod", "mods_utility", "🛠️ UTILITY MODS", None),
-    ("curseforge_mods", "mod_cf", "mods_curseforge", "🔥 CURSEFORGE MODS", None),
-    ("light_qol_mods", "mod", "mods_light_qol", "💡 LIGHT QOL", "install_light_qol"),
-]
+
 
 
 def select_language(args_lang: Optional[str], config: Dict[str, Any]) -> str:
@@ -160,13 +156,14 @@ def process_mod_category(
     global_stats: DownloadStats,
     hardware: Dict[str, Any],
     verbose: bool = False,
+    provider: str = "modrinth",
 ) -> None:
     """Process a single mod category (download mods).
 
     Args:
         client: API client instance
         config_key: Config key for the mod list (e.g. 'core_mods')
-        project_type: 'mod', 'mod_cf', or 'resourcepack'
+        project_type: 'mod' or 'resourcepack'
         out_dir: Output directory for downloaded files
         title: Display title for the section header
         config: Full configuration dict
@@ -176,6 +173,7 @@ def process_mod_category(
         global_stats: Shared DownloadStats accumulator
         hardware: Hardware info dict for compatibility filtering
         verbose: Show detailed log messages
+        provider: 'modrinth' or 'curseforge'
     """
     mod_list = config.get(config_key, [])
     if not mod_list:
@@ -247,20 +245,13 @@ def process_mod_category(
         ui.set_status(f"Downloading {title}...")
 
         with ThreadPoolExecutor(max_workers=threads) as executor:
-            if project_type == "mod_cf":
-                provider = "curseforge"
-                pt = "mod"
-            else:
-                provider = "modrinth"
-                pt = project_type
-
             futures = [
                 executor.submit(
                     _process_mod_wrapper,
                     client,
                     m,
                     mc_version,
-                    pt,
+                    project_type,
                     out_dir,
                     installed,
                     global_stats,
@@ -443,7 +434,7 @@ def copy_mods_to_destination(
     # Collect all jars from enabled categories (deduplicate by resolve() to avoid copy duplicates)
     all_jars = []
     seen_paths = set()
-    for cfg_key, _, subdir, _, flag in MOD_CATEGORIES:
+    for cfg_key, _, subdir, _, flag, _ in MOD_CATEGORIES:
         if not config.get(cfg_key):
             continue
         if should_process_category(flag, config, args_yes):
@@ -633,7 +624,7 @@ def get_destination_path(
                         f"{BColors.FAIL}{get_string('operation_cancelled_security')}{BColors.ENDC}"
                     )
                     return None
-    except Exception as e:
+    except (ValueError, OSError) as e:
         logger.error(f"Path validation failed: {e}")
         if args_yes:
             return None
@@ -651,7 +642,7 @@ def get_destination_path(
     if p.parent and not p.parent.exists():
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Could not create directory {p.parent}: {e}")
             return None
     return p
@@ -679,7 +670,11 @@ def main():
     )
     args = parser.parse_args()
 
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as e:
+        print(f"{BColors.FAIL}{e}{BColors.ENDC}")
+        sys.exit(1)
     select_language(args.lang, config)
 
     # Check for duplicates if not in batch mode
@@ -708,7 +703,7 @@ def main():
     all_stats = DownloadStats()
 
     # Process mod categories
-    for config_key, project_type, subdir, title, flag in MOD_CATEGORIES:
+    for config_key, project_type, subdir, title, flag, provider in MOD_CATEGORIES:
         mod_list = config.get(config_key, [])
         if not mod_list:
             continue
@@ -730,6 +725,7 @@ def main():
             all_stats,
             hardware,
             args.verbose,
+            provider,
         )
 
     # Process texture packs

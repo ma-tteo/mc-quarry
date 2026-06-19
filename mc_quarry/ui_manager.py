@@ -271,8 +271,7 @@ def detect_hardware() -> Dict[str, Any]:
                 subprocess.TimeoutExpired,
             ) as e:
                 logger.debug(f"macOS GPU detection failed: {e}")
-    except Exception as e:
-        # Log unexpected errors but keep generic fallback
+    except (OSError, subprocess.SubprocessError) as e:
         logger.debug(f"Hardware detection failed: {e}")
 
     return hardware
@@ -371,13 +370,3 @@ def print_download_summary(stats: Any) -> None:
 
     print(f"{BColors.OKBLUE}╚{'═' * inner_width}╝{BColors.ENDC}\n")
 
-
-from . import translations as _translations  # noqa: E402, F811
-
-
-def __getattr__(name: str):  # noqa: E402
-    """Delegate selected_lang access to translations module for backward compat."""
-    if name == "selected_lang":
-        return _translations.selected_lang
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)

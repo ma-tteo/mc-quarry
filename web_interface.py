@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mc_quarry.api_client import APIClient
 from mc_quarry.config_manager import load_config, save_config
+from mc_quarry.constants import CATEGORIES as CATEGORY_MAP
+from mc_quarry.exceptions import ConfigError
 from mc_quarry.downloader import (
     filter_mods,
     read_all_mod_info,
@@ -35,43 +37,6 @@ from mc_quarry.utils import DownloadStats
 
 # Minecraft version pattern — kept in sync with main.py:MC_VERSION_PATTERN
 MC_VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?([+-][a-zA-Z0-9.]+)?$")
-
-# Category → (output subdir template, project_type, provider).
-# Aligned with main.py:MOD_CATEGORIES so the web routes mods to the same
-# folders as the CLI. Fixes the previous bug where curseforge_mods landed in
-# mods_core_* instead of mods_curseforge_*.
-CATEGORY_MAP: Dict[str, Dict[str, str]] = {
-    "core_mods": {
-        "subdir": "mods_core_{ver}",
-        "project_type": "mod",
-        "provider": "modrinth",
-    },
-    "utility_mods": {
-        "subdir": "mods_utility_{ver}",
-        "project_type": "mod",
-        "provider": "modrinth",
-    },
-    "light_qol_mods": {
-        "subdir": "mods_light_qol_{ver}",
-        "project_type": "mod",
-        "provider": "modrinth",
-    },
-    "curseforge_mods": {
-        "subdir": "mods_curseforge_{ver}",
-        "project_type": "mod",
-        "provider": "curseforge",
-    },
-    "texture_packs": {
-        "subdir": "texture_packs_{ver}",
-        "project_type": "resourcepack",
-        "provider": "modrinth",
-    },
-    "curseforge_texture_packs": {
-        "subdir": "texture_packs_cf_{ver}",
-        "project_type": "resourcepack",
-        "provider": "curseforge",
-    },
-}
 
 # Editable top-level config keys the web UI is allowed to write. Anything
 # outside this whitelist passed to POST /api/config is ignored.
@@ -107,7 +72,11 @@ app = Flask(
     static_folder=Path(__file__).parent / "mc_quarry" / "web" / "static",
 )
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", os.urandom(24).hex())
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=["http://127.0.0.1:5000", "http://localhost:5000"],
+    async_mode="threading",
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -138,19 +107,19 @@ def _snapshot_state() -> Dict[str, Any]:
 
 
 def _reset_state() -> None:
-    """Reset download_state to a fresh idle snapshot (must hold no other assumptions)."""
-    global download_state
+    """Reset download_state to a fresh idle snapshot (mutates in-place)."""
     with state_lock:
-        download_state = {
-            "running": False,
-            "progress": 0,
-            "current_mod": "",
-            "status": "idle",
-            "stats": {"installed": 0, "updated": 0, "skipped": 0, "failed": 0, "not_found": 0},
-            "summary": {"failed": [], "not_found": [], "skipped_incompatible": 0},
-            "log": [],
-            "error": None,
-        }
+        download_state.clear()
+        download_state.update(
+            running=False,
+            progress=0,
+            current_mod="",
+            status="idle",
+            stats={"installed": 0, "updated": 0, "skipped": 0, "failed": 0, "not_found": 0},
+            summary={"failed": [], "not_found": [], "skipped_incompatible": 0},
+            log=[],
+            error=None,
+        )
 
 
 def emit_log(message: str, level: str = "info"):
@@ -215,7 +184,7 @@ def run_download_task(config: Dict[str, Any], mc_version: str, categories: list)
             cat_cfg = CATEGORY_MAP.get(
                 category, CATEGORY_MAP["core_mods"]
             )
-            out_dir = base_dir / cat_cfg["subdir"].format(ver=mc_version)
+            out_dir = base_dir / f"{cat_cfg['subdir']}_{mc_version}"
             project_type = cat_cfg["project_type"]
             provider = cat_cfg["provider"]
 
@@ -349,7 +318,10 @@ def get_summary():
 @app.route("/api/config")
 def get_config():
     """Get current configuration."""
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as e:
+        return jsonify({"error": str(e)}), 500
     # Don't send API key to client
     if "curseforge_api_key" in config:
         config["curseforge_api_key"] = "***" if config["curseforge_api_key"] else ""
@@ -367,6 +339,9 @@ def update_config():
     try:
         new_config = request.json or {}
         config = load_config()
+    except ConfigError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    try:
         for key, value in new_config.items():
             if key not in EDITABLE_CONFIG_KEYS:
                 continue
@@ -409,7 +384,10 @@ def start_download():
     # Reset state for a fresh run
     _reset_state()
 
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
     # Start background thread
     thread = threading.Thread(
